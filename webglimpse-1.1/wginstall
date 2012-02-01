@@ -1,0 +1,440 @@
+#!/usr/bin/perl
+# The installation script for WebGlimpse
+$VERSION="1.1b1";
+
+if($ARGV[0] ne "osf" &&
+	$ARGV[0] ne "solaris" &&
+	$ARGV[0] ne "sunos"){
+	print "You must specify one of:\n";
+	print " osf solaris sunos\n";
+	print "as the first parameter.  This should be your OS type.  For more information\n";
+	print "or if your platform isn't supported, see the Makefile.\n";
+	exit(0);
+}
+
+$PLATFORM = $ARGV[0];
+
+###################### CHANGE FOR YOUR PLATFORM ######################
+# $PLATFORM="osf";			# DEC Alphas, osf/1
+# $PLATFORM="solaris";		# SUN Solaris
+# $PLATFORM="sunos";		# SUN Sunos
+############################ END CHANGES #############################
+
+
+# copy the files
+@cgibinfiles=("webglimpse", 
+				"webglimpse-fullsearch",
+				"mfs");
+@glimpsebins=("getfile",
+				"addsearch",
+				"confarc",
+				"rmarc",
+				"html2txt",
+				"makecron",
+				"makenh",
+				"Makefile");
+
+@libfiles = (
+					"CHANGES.url_get",
+					"ftplib.pl",
+					"normalize.pl",
+					"url_get.pl",
+					"httpget",
+					"httpget.pl",
+					"get_href.pl",
+					"utils.h",
+					"URL.pl",
+					"siteconf.pl",
+					"webgutils.pl",
+					"config.pl",
+					"httpget.c",
+					"url_get");
+
+@distfiles = (
+					"glimpse-eye.jpg",
+					"glimpse_exclude",
+					"glimpse_filters",
+					"wgfilter-box",
+					"wgfilter-index",
+					"wgbox.html");
+
+# change the settings in the files
+# for the files: 
+@changefiles=("cgi-bin/webglimpse", 
+				"cgi-bin/webglimpse-fullsearch",
+				"cgi-bin/mfs",
+				"lib/siteconf.pl",
+				"lib/httpget.pl",
+				"getfile",
+				"addsearch",
+				"confarc",
+				"rmarc",
+				"makecron",
+				"makenh");
+
+$oldumask = umask 002;
+$GLIMPSE_VERSION = 4.0;
+
+##############################################################################
+# variables to obtain:
+# Location of httpd directory
+$WEBGLIMPSE_HOME="/usr/local/webglimpse";
+#
+# This is URL path where the scripts are located...
+$CGIBIN = "cgi-bin";
+# 
+# get the paths for perl and glimpse
+$PERL = `which perl`;
+$CONVERT_LOC = `which wgconvert`;
+$GLIMPSE_LOC = `which glimpse`;
+$GLIMPSEIDX_LOC = `which glimpseindex`;
+$gunzip = `which gunzip`;
+$CAT = `which cat`;
+# remove the '\n'
+chomp $CAT;
+if(!(-e $CAT)){
+	$CAT="";
+}
+chomp $PERL;
+if(!(-e $PERL)){
+	$PERL="";
+}
+chomp $CONVERT_LOC;
+if(!(-e $CONVERT_LOC)){
+	$CONVERT_LOC="";
+}
+chomp $GLIMPSE_LOC;
+if(!(-e $GLIMPSE_LOC)){
+	$GLIMPSE_LOC="";
+}
+chomp $GLIMPSEIDX_LOC;
+if(!(-e $GLIMPSEIDX_LOC)){
+	$GLIMPSEIDX_LOC="";
+}
+chomp $gunzip;
+if(!(-e $gunzip)){
+	$gunzip="";
+}
+# 
+##############################################################################
+
+$|=1;  # so stdout of system calls work okay
+
+
+$tempfile = "tmp.install";
+
+# print initial message
+print
+"This is WebGlimpse $VERSION installation script.  For documentation see\n";
+print
+"http://glimpse.cs.arizona.edu/webglimpse/install.html\n\n";
+print
+"WebGlimpse requires glimpse 4.0b1 (or later).\n";
+print
+"For more information on glimpse, see http://glimpse.cs.arizona.edu/\n\n";
+print
+"When asked for, directories should *not* have a trailing '/'s.\n\n";
+
+# find the executables
+if($PERL eq ""){
+	$PERL = &prompt("I cannot find perl!  Where is it?","");
+}
+
+if($CONVERT_LOC eq ""){
+	$CONVERT_LOC = &prompt("I cannot find wgconvert!  Where is it?","");
+}
+
+if($GLIMPSE_LOC eq ""){
+	$GLIMPSE_LOC = &prompt("I cannot find glimpse!  Where is it?","");
+}
+
+if(!is_version_okay("$GLIMPSE_LOC -V", $GLIMPSE_VERSION)){
+	$GLIMPSE_LOC = &prompt("I cannot find glimpse (version 4.0b1 or higher)!  Where is it?","");
+}
+
+if($GLIMPSEIDX_LOC eq ""){
+	$GLIMPSEIDX_LOC = &prompt("I cannot find glimpseindex!  Where is it?","");
+}
+
+# if(!is_version_okay("$GLIMPSEIDX_LOC -V", $GLIMPSE_VERSION)){
+# 	$GLIMPSEIDX_LOC = &prompt("I cannot find glimpseindex version 4.0b1 or higher)!  Where is it located?","");
+# }
+
+if($gunzip eq ""){
+	$gunzip = &prompt("I cannot find gunzip using 'which'!  Where is it?","");
+}
+
+if($CAT eq ""){
+	$CAT = &prompt("I cannot find cat using 'which'!  Where is it?","");
+}
+
+# assume that *this* is the correct directory
+$WEBGLIMPSE_HOME = `pwd`;
+chomp($WEBGLIMPSE_HOME);
+
+print "\n\nThis directory will be considered the 'home' of WebGlimpse:\n";
+print "  $WEBGLIMPSE_HOME\n";
+print "If this is not okay, please quit this program, move the distribution,\n";
+print "and extract the files into the correct directory.\n";
+print "If this is okay, please press <RETURN> now.\n\n";
+
+$_ = <STDIN>;
+
+print "\n\nNow I will ask you a few questions about your configuration.\n\n";
+
+$CGIBIN_PWD = 
+	&prompt("Which directory should I copy the WebGlimpse cgi-bin scripts to?\nIf you choose a different\ndirectory than the default, make sure it exists.\n",
+	"$WEBGLIMPSE_HOME/cgi-bin");
+
+# ask for the settings
+$CGIBIN = 
+	&prompt("What is the script alias for $CGIBIN_PWD?",
+		$CGIBIN);
+
+# format the paths correctly
+# there should be no trailing \n's
+# NO trailing '/'s
+if($CAT=~/\/$/) {
+	chop $CAT;
+}
+if($PERL=~/\/$/) {
+	chop $PERL;
+}
+if($CONVERT_LOC=~/\/$/) {
+	chop $CONVERT_LOC;
+}
+if($GLIMPSE_LOC=~/\/$/) {
+	chop $GLIMPSE_LOC;
+}
+if($GLIMPSEIDX_LOC=~/\/$/) {
+	chop $GLIMPSEIDX_LOC;
+}
+if($gunzip=~/\/$/) {
+	chop $gunzip;
+}
+if($WEBGLIMPSE_HOME=~/\/$/) {
+	chop $WEBGLIMPSE_HOME;
+}
+if($CGIBIN_PWD=~/\/$/) {
+	chop $CGIBIN_PWD;
+}
+if($CGIBIN=~/\/$/) {
+	chop $CGIBIN;
+}
+
+# no beginning '/' on cgibin_url
+if($CGIBIN=~/^\//) {
+	$CGIBIN=substr($CGIBIN,1);
+}
+	
+
+# prompt for correctness
+print "-----------------------------------------------------\n";
+print "perl: $PERL\n";
+print "glimpse: $GLIMPSE_LOC\n";
+print "glimpseindex: $GLIMPSEIDX_LOC\n";
+print "gunzip: $gunzip\n";
+print "cat: $CAT\n";
+print "WebGlimpse binaries directory: $WEBGLIMPSE_HOME\n";
+print "cgi-bin directory: $CGIBIN_PWD\n";
+print "cgi-bin *relative* URL: $CGIBIN\n";
+print "-----------------------------------------------------\n";
+
+print "To continue with these settings, press RETURN.  Otherwise, press ^C to abort.\n";
+$_=<STDIN>;
+
+# build 
+print "Trying to build httpget...\n";
+unlink("$WEBGLIMPSE_HOME/lib/httpget");  # remove it if it's there
+system("make $PLATFORM");
+# if it worked, make the file executable by all
+if(-e "$WEBGLIMPSE_HOME/lib/httpget" && -e "$WEBGLIMPSE_HOME/lib/html2txt"){
+	print "BUILD SUCCESSFUL.\n";
+	chmod (0755, "$WEBGLIMPSE_HOME/lib/httpget");
+}else{
+	### TO DO -- update $HTTPGET_CMD
+	# DO NOT use httpget.pl and url_get; they're too slow.
+	# $GETHTTP_CMD = "\$WEBGLIMPSE_LIB/httpget.pl";
+	print "BUILD FAILED.\n";
+	print "Try to build httpget and html2txt later... \nWebGlimpse will not work well without them.\nSee Makefile for more details.\n";
+	exit(0);
+}
+$GETHTTP_CMD = "\$WEBGLIMPSE_LIB/httpget";
+
+foreach $file ( @changefiles ){
+	# make sure we can overwrite the file
+	if(chmod (0755, $file)==0){
+		die "Cannot change permissions of $file.  Aborting install.\n";
+	}
+
+	# open the file
+	open(FILE, $file) || die "Aborting install.  Cannot open file $file: ";
+
+	# open a temp file 
+	open(TEMP, ">$tempfile") 
+		||die "Aborting install.  Cannot open temporary file: ";
+	
+	while(<FILE>){
+		if(/^\$PERL *=/){
+			print TEMP "\$PERL = \"$PERL\";\n";
+		}elsif(/^\$GETHTTP_CMD *=/){
+			print TEMP "\$GETHTTP_CMD = \"$GETHTTP_CMD\";\n";
+		}elsif(/^\$CAT *=/){
+			print TEMP "\$CAT = \"$CAT\";\n";
+		}elsif(/^\$CONVERT_LOC *=/){
+			print TEMP "\$CONVERT_LOC = \"$CONVERT_LOC\";\n";
+		}elsif(/^\$GLIMPSE_LOC *=/){
+			print TEMP "\$GLIMPSE_LOC = \"$GLIMPSE_LOC\";\n";
+		}elsif(/^\$GLIMPSEIDX_LOC *=/){
+			print TEMP "\$GLIMPSEIDX_LOC = \"$GLIMPSEIDX_LOC\";\n";
+		}elsif(/^\$WEBGLIMPSE_HOME *=/){
+			print TEMP "\$WEBGLIMPSE_HOME = \"$WEBGLIMPSE_HOME\";\n";
+		}elsif(/^\$CGIBIN *=/){
+			print TEMP "\$CGIBIN = \"$CGIBIN\";\n";
+		}elsif(/^\$gunzip *=/){
+			print TEMP "\$gunzip = \"$gunzip\";\n";
+		}elsif(/^#!\/usr\/local\/bin\/perl$/){
+			print TEMP "#!$PERL\n";
+		}else{
+			print TEMP $_;
+		}
+	}
+	close (TEMP);
+	close (FILE);
+
+	# overwrite $file with $tempfile
+	if(rename($tempfile, $file)==0){
+		die "Cannot rename $tempfile to $file.\n";
+	}
+
+	# make sure everyone can read and execute the file
+	if(chmod (0755, $file)==0){
+		die "Cannot change permissions of $file.  Aborting install.\n";
+	}
+}
+
+# make sure CGIBIN_PWD directory exists
+if(!(-e $CGIBIN_PWD)){
+	### TO DO -- make the directory
+	# for right now, die
+	print "The directory $CGIBIN_PWD must exist.\n";
+	print "Please create this directory then rerun this installation program.\n";
+	exit(1);
+}
+
+# make sure WEBGLIMPSE_HOME  and CGIBIN_PWD directories have permissions
+chmod (0755, $WEBGLIMPSE_HOME);
+
+# copy the cgi-bins into the directory
+if($CGIBIN_PWD ne "$WEBGLIMPSE_HOME/cgi-bin"){
+	chmod (0755, "$CGIBIN_PWD");
+	foreach $file (@cgibinfiles){
+		chmod(0755, "cgi-bin/$file");
+		system("cp cgi-bin/$file $CGIBIN_PWD/");
+	}
+}
+
+# make sure the permissions are okay
+chmod (0755, "lib", "dist", "$CGIBIN_PWD");
+system ("chmod 755 *");
+system ("chmod 644 dist/*");
+system ("chmod 755 lib/*");
+system ("chmod 755 $CGIBIN_PWD/*");
+
+# create the dist/glimpse_filters file
+eval{
+	open(FILE, ">dist/glimpse_filters");
+};
+if($@){
+	warn "Unable to create dist/glimpse_filters file!  Please create it manually!!\n";
+}else{
+	print FILE "*.html\t$WEBGLIMPSE_HOME/lib/html2txt <\n";
+	print FILE "*.shtml\t$WEBGLIMPSE_HOME/lib/html2txt <\n";
+	print FILE "*.sht\t$WEBGLIMPSE_HOME/lib/html2txt <\n";
+	print FILE "*.htm\t$WEBGLIMPSE_HOME/lib/html2txt <\n";
+	close FILE;
+}
+
+# now set up the server
+print "Calling the server set-up script...\n";
+system("wginstall.server $WEBGLIMPSE_HOME");
+
+# change wginstall and wginstall.server so no one can run it!
+chmod (0500, "$WEBGLIMPSE_HOME/wginstall", "$WEBGLIMPSE_HOME/wginstall.server");
+
+# restore the umask
+umask $oldumask;
+
+print
+"\n\n------------------------------------------------------------------------\nDONE with WebGlimpse installation.\n\n";
+print
+"The cgi-bin directory $CGIBIN_PWD will need to be added\n";
+print
+" to your server configuration file as a cgi-bin directory.\n\n";
+print
+"See http://glimpse.cs.arizona.edu/webglimpse for more\n";
+print
+"information on WebGlimpse.\n";
+print
+"\n\nRun the confarc command now to configure an archive.\n";
+
+
+##############################################################################
+## Subroutines
+##############################################################################
+
+sub is_version_okay {
+	my($cmd, $ver) = @_;
+	my(@output) = `$cmd`;
+
+	my(@line) = split(/\s/,@output[1]);
+	$thisver = @line[4];  # "This is xxx version x.x"
+
+	if($thisver >= $ver){
+		$ans = 1;
+	}else{
+		$ans = 0;
+	}
+	return $ans;
+}
+
+
+##########################################################################
+sub read_bool {
+	local($prompt,$def) = @_;
+
+	if($def==1){
+		$def = "y";
+	}elsif($def==0){
+		$def = "n";
+	}
+	$ans = -1;
+	until($ans >= 0){
+		print $prompt,"[",$def,"] (y/n):";
+		$| = 1;
+		$_ = <STDIN>;
+		chomp;
+		$_ = $_ ? $_ : $def;
+		$_ = substr($_, 0, 1);
+		if ($_ eq "y" || $_ eq "Y"){
+			$ans = 1;
+		}elsif ($_ eq "n" || $_ eq "N"){
+			$ans = 0;
+		}else {
+			print "Please enter y or n.\n";
+		}
+	}
+	return $ans;
+}
+
+##########################################################################
+sub prompt {
+	local($prompt,$def) = @_;
+	print $prompt,"[",$def,"]:";
+	$| = 1;
+	$_ = <STDIN>;
+	chomp;
+	return $_?$_:$def;
+}
+
+1;

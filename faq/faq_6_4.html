@@ -1,0 +1,149 @@
+<!DOCTYPE HTML PUBLIC "-//SoftQuad//DTD HTML 3.2 + extensions for HoTMetaL PRO 3.0(U) 19961211//EN" "hmpro3.dtd">
+<HTML> 
+  <HEAD> 
+	 <TITLE>Gaffaweb - Kate Bush: FAQ - How to do ftp?</TITLE> 
+  </HEAD> 
+  <BODY BGCOLOR="#F0CCFF" BACKGROUND="faq_back.gif" TEXT="#400080"
+	LINK="#D422D6" VLINK="#9900E6" ALINK="#F0CCFF"> 
+	 <H1 ALIGN="center"><IMG SRC="faq_h_sm.gif" ALT="Kate Bush FAQ" WIDTH="325"
+		HEIGHT="58" BORDER="0"></H1> 
+	 <PRE></PRE> 
+	 <P ALIGN="center"><IMG SRC="faq_6top.JPG" ALT="6. The Archives" WIDTH="176"
+		HEIGHT="23"></P> 
+	 <PRE>
+</PRE> 
+	 <H2 ALIGN="center"><EM>How to do ftp? </EM></H2> 
+	 <PRE>
+</PRE> 
+	 <P ALIGN="center"><A HREF="index.html"><IMG SRC="line_toc.gif"
+		ALT="----- Back to the FAQ Table of Contents -----" WIDTH="599" HEIGHT="20"
+		BORDER="0"></A></P> 
+	 <PRE>
+</PRE> 
+	 <BLOCKQUOTE> 
+		<P> To use ftp directly you have to have direct access to the internet.
+		  </P> 
+		<P> You connect by typing </P> 
+		<P> <A HREF="ftp://ftp.UU.NET"> ftp ftp.UU.NET</A> [or:
+		  <A HREF="ftp://137.39.1.9">ftp 137.39.1.9</A>] </P> 
+		<P> Log in as "anonymous" or "ftp" and use your username as your
+		  password. </P> 
+		<P> To change directories e.g. type </P> 
+		<P> cd /usenet/rec.music.gaffa </P> 
+		<P> Other commands are: </P> 
+		<P> dir &lt;dirname&gt; [get a directory, &lt;dirname&gt; is optional,
+		  current if omitted] <BR> get &lt;filename&gt; [get the requested file] <BR> bin
+		  [set transfer to binary mode, this is needed for pictures and compressed files.
+		  Best is if you always do 'bin' first, so you don't forget] <BR> bye [end the
+		  ftp session] </P> 
+		<PRE>
+
+</PRE> 
+		<P ALIGN="center"><A HREF="#top"><IMG SRC="faq_l1.gif"
+		  ALT="---------------" WIDTH="599" HEIGHT="20" BORDER="0"></A></P> 
+		<PRE>
+
+</PRE> 
+		<P> If you don't have FTP (file transfer ability) you can still get the
+		  files by using an FTP mail server run by DEC. You send it a list of commands
+		  and then it sends you the files as regular mail messages, so anyone who has the
+		  ability to send and receive private mail can use this. If a file is larger then
+		  60k it will be send as more than one message. </P> 
+		<P> If you want to GET binary files (GIF picture files, Wordperfect
+		  files, or anything that's not straight text) it will send you the files in a
+		  special text format called UUENCODED, you will need a program called UUDECODE
+		  for your computer to decode these. Note that this is not always the most
+		  reliable way of getting files, i.e. you may have to do it several times. </P> 
+		<P> To start off using this, send a message to
+		  <A HREF="mailto:ftpmail@decwrl.dec.com">ftpmail@decwrl.dec.com</A>, the first
+		  message should read simply HELP - don't bother with a subject line as these are
+		  ignored. You will be sent back the basic commands and some examples, read this
+		  carefully (as much as you are able to understand). Here are some specific
+		  examples for accessing the Love-Hounds archives, don't type the parts in
+		  brackets []. Note that when typing in file names, upper and lower case are
+		  important! Parts in &lt;&gt; have to replaced by something useful. </P> 
+		<P> [There is another similar service that can be reached at
+		  <A HREF="mailto:bitftp@pucc.Princeton.edu">bitftp@pucc.Princeton.edu</A> - send
+		  a message with body HELP (subject isn't important), and you will receive
+		  instructions. This site seems to be faster than
+		  <A HREF="mailto:ftpmail@decwrl.dec.com">ftpmail@decwrl.dec.com</A>]
+		  </P></BLOCKQUOTE> 
+	 <PRE>
+
+</PRE> 
+	 <P ALIGN="center"><A HREF="#top"><IMG SRC="faq_l1.gif"
+		ALT="---------------" WIDTH="599" HEIGHT="20" BORDER="0"></A></P> 
+	 <PRE>
+
+</PRE> 
+	 <P> --&gt; <STRONG>Connect to the archives and get a directory of some of
+		the main areas: </STRONG> </P> 
+	 <BLOCKQUOTE> 
+		<P> reply &lt;your address&gt; [this may or may not be needed on all
+		  messages for your system] <BR> connect ftp.UU.NET [connect to the file
+		  archives] <BR> chdir usenet/rec.music.gaffa/kb [change to the main area, only
+		  one CHDIR per session] </P> 
+		<PRE>
+
+</PRE> 
+		<P>dir [get directory of main area] <BR> dir garden [get directory of
+		  GARDEN files] <BR> dir cloudbusting [get directory of Cloudbusting dirs] <BR>
+		  dir pix [get dir of pix directories] <BR> quit </P></BLOCKQUOTE> 
+	 <P>Note: The Garden is also on Gaffaweb, at <A
+		HREF="../garden">http://www.gryphon.com/gaffa/garden/</A> </P> 
+	 <PRE>
+
+</PRE> 
+	 <P ALIGN="center"><A HREF="#top"><IMG SRC="faq_l1.gif"
+		ALT="---------------" WIDTH="599" HEIGHT="20" BORDER="0"></A></P> 
+	 <PRE>
+
+</PRE> 
+	 <P> --&gt; <STRONG>Connect to the Cloudbusting section and get some text
+		files:</STRONG> </P> 
+	 <BLOCKQUOTE> 
+		<P> reply &lt;your address&gt; <BR> connect ftp.UU.NET <BR> chdir
+		  usenet/rec.music.gaffa/kb/cloudbusting/text <BR> [change to Cloudbusting
+		  subdirectory] <BR> get cloud1a.txt [GET a file] <BR> get cloud1b.txt [GET
+		  another file, only 10 at once] <BR> get cloud1c.txt <BR> quit </P></BLOCKQUOTE>
+	 
+	 <PRE>
+
+</PRE> 
+	 <P ALIGN="center"><A HREF="#top"><IMG SRC="faq_l1.gif"
+		ALT="---------------" WIDTH="599" HEIGHT="20" BORDER="0"></A></P> 
+	 <PRE>
+
+</PRE> 
+	 <P> --&gt; <STRONG>Connect to the GARDEN section and get some GARDEN
+		files:</STRONG> </P> 
+	 <BLOCKQUOTE> 
+		<P> reply &lt;your address&gt; <BR> connect ftp.UU.NET <BR> chdir
+		  usenet/rec.music.gaffa/kb/garden <BR> [change to garden subdirectory] <BR> get
+		  GARDEN01 [GET first GARDEN file] <BR> get GARDEN02 [GET another file, only 10
+		  at once] <BR> quit </P></BLOCKQUOTE> 
+	 <PRE>
+
+</PRE> 
+	 <P ALIGN="center"><A HREF="#top"><IMG SRC="faq_l1.gif"
+		ALT="---------------" WIDTH="599" HEIGHT="20" BORDER="0"></A></P> 
+	 <PRE>
+
+</PRE> 
+	 <P> --&gt; <STRONG>Connect to pix.hill and get Love-Hounds
+		picture:</STRONG> </P> 
+	 <BLOCKQUOTE> 
+		<P> reply &lt;your address&gt; <BR> connect ftp.UU.NET <BR> chdir
+		  usenet/rec.music.gaffa/kb/pix/pix.hill <BR> uuencode [specify UUENCODE format]
+		  <BR> binary [specify BINARY format] <BR> get LOVENAME.GIF <BR> quit </P> 
+		<P> If you can't FTP and you don't have the patience to figure all this
+		  out, the BBSes listed above offer the GIFs and many of the other files too.
+		  </P></BLOCKQUOTE> 
+	 <PRE>
+
+
+</PRE> 
+	 <P ALIGN="center"><A HREF="faq_6_5.html"><IMG SRC="line_nxt.gif"
+		ALT="----- On to the next section -----" WIDTH="599" HEIGHT="20"
+		BORDER="0"></A></P> </BODY>
+</HTML>

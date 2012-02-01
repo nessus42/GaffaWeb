@@ -1,0 +1,19 @@
+<hr>
+<center>
+<table border=5><tr border=0>
+<td align=center valign=middle>
+<a href=http://glimpse.cs.arizona.edu/webglimpse>
+<img src=$ARCHIVEURL/.glimpse-eye.jpg alt="WG" align=middle width=50><br>
+<font size=-3>WebGlimpse</font></a></td>
+<td> <FORM method=get ACTION=/$CGIBIN/webglimpse$ARCHIVEPWD>
+<INPUT NAME=query size=20>
+<INPUT TYPE=submit VALUE="Search">
+<INPUT name=file type=hidden value="$FILE">
+<a href=/$CGIBIN/webglimpse-fullsearch$ARCHIVEPWD?file=$FILE>
+Search Options</a></td></tr>
+<tr><td colspan=2>
+Search:	
+<INPUT TYPE=radio NAME=scope VALUE=neighbor CHECKED>
+The neighborhood of this page
+<INPUT TYPE=radio NAME=scope VALUE=full>The full archive
+</td></tr></form></table></center><hr>

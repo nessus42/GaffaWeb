@@ -1,0 +1,721 @@
+#!/usr/local/bin/./perl
+#
+# Acknowledgements
+#
+# Thanks to 
+# Paul Clark's aglimpse program
+# paul@cs.arizona.edu
+# which was the starting point for this program.
+#
+# Written by:
+# Michael Smith
+# msmith@cs.arizona.edu
+#
+# Modifications
+#
+# 4/13/96	Version 1.0, original
+#
+# Modifications
+#	We translate the local file name to URL and grab the title in
+#	this script, instead of start 2 "glimpse -k" sessions.
+#					06/28/96	ZDC
+#
+# 9/96
+#  In-lined a lot of "require"d code for speed
+#  Tried to optimize output of information
+# 
+#######################################################################
+
+# **** **** **** ****    CONFIGURABLE VARIABLES     **** **** **** ****
+$WEBGLIMPSE_HOME = "/usr2/bgopal/webglimpse/webglimpse";
+$GLIMPSE_LOC = "/home/bgopal/bin/./glimpse";
+# $GREP_LOC = $GLIMPSE_LOC;
+
+# lib directory
+$WEBGLIMPSE_LIB = "$WEBGLIMPSE_HOME/lib";
+
+# Path to your scripts
+$CGIBIN = "wgcgi-bin";
+
+# **** **** **** **** NO CONFIGURATION NEEDED BELOW **** **** **** ****
+# lock file
+$LOCKFILE = "indexing-in-progress";
+
+# If you want per-line access
+$FSSERV = "/$CGIBIN/mfs" ;
+
+# Set file name pattern where to suppress HTML tags
+# Comment out to cancel suppression
+$SUPPRESS_HTML_TAGS = "\\.s?html?\$";
+$REMOTEDIR = ".remote";
+# $MAPFILE = ".wgmapfile";
+$nh_pre = ".nh.";
+
+# name of config file
+$CONFIGFILE = "archive.cfg";
+
+#### BEGIN SITECONF VARS ####
+$wgConfPath = "$WEBGLIMPSE_HOME/.wgsiteconf";
+ 
+$DirectoryIndex="";
+$UserDir="";
+$DocumentRoot="";
+@AliasList=();
+@ScriptAliasList=();
+$Port="";
+$Server="";
+%HomeDir={};
+#### END SITECONF VARS ####
+
+
+
+
+
+# **** **** **** **** Done settings **** **** **** ****
+
+# make the output as we can
+$| = 1;
+
+#---------------------------------
+# make my libraries more important
+unshift(@INC, "$WEBGLIMPSE_LIB");
+require "config.pl";
+
+### mdsmith -- cut this out; we don't need the siteconf info any more
+# require "siteconf.pl";
+
+
+### mdsmith -- cut this out; we don't need the siteconf info any more
+# &siteconf_ReadConf();
+
+### DEBUG
+($startsec, $startmin, $starthour, $other) = localtime(time);
+
+$path_info = $ENV{'PATH_INFO'};
+$_ = $path_info;
+
+# might as well start the message now
+print "Content-type: text/html\n\n";
+print "<HEAD>\n";
+
+$indexdir = $path_info;
+
+if(-e "$indexdir/$LOCKFILE"){
+	&err_locked;
+}
+
+if(&TestConfig($indexdir)!=2){
+	&err_conf;
+}
+
+($title, $urlpath, $traverse_type, $explicit_only, $numhops,
+ $nhhops, $local_limit, $remote_limit, $addboxes, @urllist) = ReadConfig($indexdir);
+
+# Ensure that Glimpse is available on this machine
+-x $GLIMPSE_LOC || &err_noglimpse ;
+
+# Ensure that index is available
+-r "$indexdir/.glimpse_index" || &err_noindex($indexdir) ;
+
+#	To support an ISINDEX type search, set query string if given
+#	an argument on the command line
+$prefix="whole=on&case=off&query=" if ( $#ARGV >= 0 );
+
+#	Check that a query has been made
+($query = $ENV{'QUERY_STRING'}) || &err_noquery ;
+
+#	Strip the variables out from the query string,
+#	and assign them into variables, prefixed by 'QS_'
+@qvars = split( /\&/, $prefix . $query );
+foreach (@qvars) {
+	split(/=/);
+	$fname = $_[0];
+	$fvalue = $_[1];
+	$fvalue =~ s/\'//g;
+	$cmd = "\$QS_$fname = '$fvalue';" ;
+	# print ">>>",$cmd,"\n";
+	$cmd = eval $cmd if ( $fname =~ /^[a-z_A-Z]\w*$/ );
+}
+
+# resubstitute / for %2F in the file paths
+$QS_file =~ s/%2f/\//ig;
+
+$QS_query =~ s|\+| |g;
+$QS_query =~ s|%(\w\w)|sprintf("%c", hex($1))|ge;
+$pquery = $QS_query;
+$QS_query =~ s|\'|\'\"\'\"\'|g;
+
+$OPT_errors="-$QS_errors"	if $QS_errors =~ /^[0-8]$/;
+$OPT_errors="-B"		if $QS_errors =~ /^Best\+match$/;
+# remove the '-i' from case if the switch is on
+$OPT_case="-i";
+$OPT_case=""			if $QS_case =~ /^on$/;
+$OPT_whole="-w"			unless $QS_whole =~ /^on$/;
+$OPT_age = "-Y $QS_age" if $QS_age =~ /^[0-9]+$/;
+# print "OPT_age = $OPT_age<br>\n";
+$path =~ s/\./\\./g;
+$path =~ s/\'//g;
+$OPT_filter="-F '$path'"	if $path;
+
+if ($QS_maxlines =~ /\d+/) {
+	$maxlines = $&;
+} else {
+	$maxlines = 20;
+}
+if ($QS_maxfiles =~ /\d+/) {
+	$maxfiles = $&;
+} else {
+	$maxfiles = 25;
+}
+
+$highlight = $QS_query;
+$highlight =~ s/^\W+//;
+$highlight = join("|",split(/\W+/,$highlight));
+# check if the query contains any words
+&err_badquery if !$highlight;
+$highlight = '\b('.$highlight.')\b' if $OPT_whole;
+
+$initial_output .= "<TITLE>Result for query \"$pquery\"\n";
+$initial_output .= "</TITLE></HEAD><BODY>\n";
+$initial_output .= "<center>";
+$initial_output .= "<H1>Results for query \"$pquery\"</H1>\n";
+$initial_output .= "<h3>on: $title</h3>\n";
+
+# if the scope is full, delete any file options
+if($QS_scope =~ /^full$/i){
+	$QS_file="";
+}
+
+if($QS_file){
+	$title = &lookup_title($QS_file);
+#	$title = "";
+	if ($title eq "No Title") {
+	   $title=$QS_file;
+	}
+	else {
+	   if($title eq ""){
+	     $title=$QS_file;
+	   }
+	}
+
+	$initial_output .= "<i>Search on neighborhood of <tt>$title</tt></i>\n";
+	$initial_output .= "</center><p>\n";
+
+	# $fullfile = "$indexdir/$QS_file";
+	$fullfile = $QS_file;		# it might not be in a subdir of the archivepwd
+	# modify the file name to include the .nh.
+	# prepend the file name with nh_pre
+	$fullfile =~ s/([^\/]+)$/$nh_pre$1/;
+
+	#$OPT_file = "-f $fullfile"; Changed to -p --> bgopal oct/6/96
+	$OPT_file = "-p $fullfile:0:0:2";
+	if(!(-e $fullfile)){
+		&err_noneighborhood;
+	}
+}else{
+	$initial_output .= "<i>Search on entire archive</i>\n";
+	$initial_output .= "</center><p>\n";
+
+	$OPT_file = "";
+}
+
+chdir $indexdir;
+
+# the default is *no* jump to lines.  If line=on, tell glimpse to get lines
+if($QS_lines){
+	$OPT_linenums="-n";
+	$initial_output .= "File name (modification date), and list of matched lines (preceded by line numbers)<br>\n";
+}else{
+	$initial_output .= "File name (modification date), and list of matched lines<br>\n";
+}
+
+#$cmd = "$GLIMPSE_LOC -j -z -y $OPT_file $OPT_linenums $OPT_age $OPT_case $OPT_whole $OPT_errors -H . " . Added -U -W --> bgopal oct/6/96
+$cmd = "$GLIMPSE_LOC -U -W -j -z -y $OPT_file $OPT_linenums $OPT_age $OPT_case $OPT_whole $OPT_errors -H . " .
+	 "$OPT_filter '$QS_query' 2>&1 |";
+if($QS_debug){
+	$initial_output .= "<br>cmd: $cmd<br>\n";
+}
+
+
+### DEBUG
+# print "<br>start time: $starthour:$startmin:$startsec<br>\n";
+# $utime = (times)[0];
+# $stime = (times)[1];
+# print "<br>time after init: $utime, $stime<br>\n";
+# ($sec, $min, $hour, $other) = localtime(time);
+# print "<br>now (after init): $hour:$min:$sec<br>\n";
+
+if (!open(GOUT, $cmd )) {
+   &err_noglimpse();
+}
+@glines = <GOUT>;
+close(GOUT);
+
+# check the return code
+$rc = $? >> 8;
+if($rc!=0){
+   # it's an error!
+   &err_badglimpse(@glines);
+}
+
+# now print out the already-computed output!
+print $initial_output;
+
+### DEBUG
+# $utime = (times)[0];
+# $stime = (times)[1];
+# print "<br>time after glimpse: $utime, $stime<br>\n";
+# ($sec, $min, $hour, $other) = localtime(time);
+# print "<br>now (after glimpse): $hour:$min:$sec<br>\n";
+
+
+$prevfile = "";
+$lcount = 0;
+$fcount = 0;
+
+foreach $line (@glines) {
+	$_ = $line;
+
+	if($QS_debug){
+		print "<br><tt>glimpse: $_</tt><br>\n";
+	}
+
+	if($QS_lines){
+		# look for line number, too
+		#(/^(\S+)\s+(\S+)\s*(([^\\:]|\\:)*):([^:]+):(\d+):(.*)/) || next;	--> bug fixed, bgopal oct/12/96
+		(/^(\S+)\s+(\S+)\s*(([^\\:]|\\:|\\\\)*):([^:]+):(.*):(.*)/) || next;
+		$file = $1;
+		$link=$2;
+		$title=$3;
+		$date = $5;
+		$line = $6;
+		$string = $7;
+	}else{
+		(/^(\S+)\s+(\S+)\s*(([^\\:]|\\:|\\\\)*):([^:]+):(.*)/) || next;
+
+		$file = $1;
+		$link = $2;
+		$title = $3;
+		$date =	$5;
+		$string = $6;
+	}
+
+	#sometimes, there is a weird parsing problem in glimpse when it doesn't succeed in extracting the title: fixed: bgopal, Nov 20, 1996
+	if ($string eq "") {
+		$string = $date;
+		$date = $title;
+		$title = "";
+	}
+
+	##### CHANGE FOR LOCAL COPY POINTERS -- mdsmith
+	# modify the local file to get the localurl
+	$localurl = $file;
+	$localurl =~ s/$indexdir/$urlpath/;
+	##### END CHANGE FOR LOCAL COPY POINTERS -- mdsmith
+
+	if($QS_debug){
+		print "<br><tt>Webglimpse: file=$file link=$link title=$title date=$date line=$line string=$string localurl=$localurl </tt><br>\n";
+	}
+
+	# replace the \:'s and \\'s in the title with just :'s
+	$title =~ s/\\\\/\\/g;
+	$title =~ s/\\:/:/g;
+
+	# skip the file if it isn't in this index directory directory
+	### commented out!
+	# next unless $file =~ s|^$indexdir||o;
+
+	# skip if the file is a .gh or .glimpse file
+	next if ($file =~ /\.gh/) || ($file =~ /\.glimpse_/);
+
+	if ($file ne $prevfile) {
+		$linecount = 0;
+		if ($fcount>$maxfiles) {
+			print "</ul>\n";
+			print "<H3>Limit of $maxfiles files exceeded.  Check the search options.</H3>\n";
+			$file = "";
+			$fcount = "at least $fcount";
+			$lcount = "at least $lcount";
+			last line;
+		}
+		print "</UL>" if ( $prevfile ne "" );
+		$prevfile = $file ;
+
+#		$title = &lookup_title($file);
+#
+		# if the file is in the remote directory, get the real name
+# 		if ($file =~ /$REMOTEDIR/)	{
+# 			@output = `$GREP_LOC -k $file $indexdir/$MAPFILE`;
+# 			($link, $junk) = split(" ", @output[0]);
+# 		} else	{
+# 			# check if it's a local file
+# 			### NOTE: this was cut out; all should be in the mapfile
+# 			### TO DO -- remove this resolution
+# 			$link = &siteconf_LocalFile2Url($file);
+# 
+# 			# if it's not a local file, it *may* be a personal one
+# 			# check the mapfile anyway
+# 			if($link eq "" ){
+# 				@output = `$GREP_LOC -k $file $indexdir/$MAPFILE`;
+# 				($link, $junk) = split(" ", @output[0]);
+# 			}
+# 		}
+# 		if($link eq ""){  # ERROR -- we couldn't find where it is!
+# 			print "<hr><b>Found in $file</b>, ",
+# 					"but could not find file's url<br><ul>\n";
+# 		}else{
+			if($title eq "No Title") {
+				$title = $link;
+			}
+			else {
+			    if($title eq ""){
+				$title = $link;
+			    }
+			}
+			##### CHANGE FOR LOCAL COPY POINTERS -- mdsmith
+			print 
+				"<hr><b><A HREF=\"",$link,
+				"\">",$title,"</A></b>",
+				", <font size=-1><a href=$localurl>(local copy)</a>, $date</font><br><UL>\n" ;
+			##### END CHANGE FOR LOCAL COPY POINTERS -- mdsmith
+# 		}
+		$fcount++ ;
+	}
+	$lcount++ ;
+	$linecount++;
+	if ($linecount>=$maxlines) {
+		print "<LI>Limit of $maxlines matched " .
+			"lines per file exceeded...\n" if
+				$linecount==$maxlines;
+		next line;
+	}
+
+	if ($SUPPRESS_HTML_TAGS && $file =~ /$SUPPRESS_HTML_TAGS/o) {
+		$string =~ s#\</?[a-zA-Z][^>]*\>?##g;
+	} else {
+		# we shouldn't suppress tags, but we need to do basic
+		#  substitutions
+		$string =~ s/\&/\&amp;/g;
+		$string =~ s/\</\&lt;/g;
+		$string =~ s/\>/\&gt;/g;
+	}
+	if($string !~ /^\s*$/){
+		if($QS_lines){
+			# BOLDING
+			if ($OPT_case) {
+				$string =~ s#$highlight#<B>$&</B>#gio;
+			} else {
+				$string =~ s#$highlight#<B>$&</B>#go;
+			}
+			$length = length($indexdir);
+			print "<LI><A HREF=\"$FSSERV$indexdir\?file=$file&line=$line#mfs\">\n" ;
+			print "line ",$line,"</A>:",$string,"\n" ;
+		}else{
+			# BOLDING
+			if ($OPT_case) {
+				$string =~ s#$highlight#<B>$&</B>#gio;
+			} else {
+				$string =~ s#$highlight#<B>$&</B>#go;
+			}
+			print "<LI>$string\n";
+		}
+	}
+}
+
+print "</UL>\n" if $file ;
+print "<HR>" ;
+print "<H2>Summary for query <code>\"",$QS_query,"\":</code></H2>\n" ;
+print "<i><a href=http://glimpse.cs.arizona.edu/webglimpse>WebGlimpse</a></i>\n";
+print "search found ",$lcount," matches in ",$fcount," files<br>\n" ;
+print "(Some matches may be to HTML tags which may not be shown.)\n";
+
+### DEBUG
+# $utime = (times)[0];
+# $stime = (times)[1];
+# $ctime = (times)[1];
+# $cstime = (times)[1];
+# print "<p>time after formatting: $utime, $stime, $ctime, $cstime<br>\n";
+# ($sec, $min, $hour, $other) = localtime(time);
+# print "<br>now: $hour:$min:$sec<br>\n";
+
+print "</BODY>\n" ;
+print "</HTML>\n" ;
+unlink "/tmp/.glimpse_tmp.$gpid";
+
+exit(0);
+
+##########################################################################
+sub diag_exit {
+# exit on error
+	exit -1;
+}
+##########################################################################
+sub err_noneighborhood {
+	# neighborhood does not exist
+	print <<EOM;
+<hr>
+<h1>File not found</h1>
+There is no neighborhood for this file.  Either the file does not
+exist or the neighborhood file does not exist.
+</body>
+</html>
+EOM
+
+	&diag_exit;
+}
+
+##########################################################################
+sub err_noquery {
+   #	The script was called without a query. 
+   #	Provide an ISINDEX type response for browsers
+   #	without form support.
+   print "
+<TITLE>Glimpse Gateway</TITLE></HEAD>
+<BODY><H1>Glimpse Gateway</H1>
+This is a gateway to Glimpse.
+Type a pattern to search in your browser's search dialog.<P>
+
+<ISINDEX>
+
+<H2>What is Glimpse ?</H2>
+<QUOTE>
+<P>
+Glimpse (which stands  for  GLobal  IMPicit  SEarch)  is  an
+indexing  and query system that allows you to search through
+all your files very quickly.   For  example,  a  search  for
+Schwarzkopf  allowing  two  misspelling errors in 5600 files
+occupying 77MB took 7 seconds on a SUN  IPC.   Glimpse  supports
+most of agrep's options (agrep is our powerful version
+of  grep)  including  approximate  matching  (e.g.,  finding
+misspelled  words),  Boolean  queries, and even some limited
+forms of regular expressions.<BR>
+Glimpse's running time is typically slower than systems
+tems using inverted indexes, but its index is  an  order  of
+magnitude smaller (typically 2-5% of the size of the files).
+<H2>Authors of Glimpse</H2>
+Udi Manber, Sun Wu, and Burra Gopal<BR>
+<ADDRESS>
+Department of  Computer
+Science, University   of   Arizona,   Tucson,   AZ  85721.<BR>
+glimpse\@cs.arizona.edu
+</ADDRESS>
+</QUOTE>
+
+<HR>
+<ADDRESS>
+Glimpse<BR>
+glimpse\@cs.arizona.edu<BR>
+</ADDRESS>
+
+</BODY>
+";
+   &diag_exit;
+}
+
+##########################################################################
+sub err_noglimpse {
+   #
+   # Glimpse was not found
+   # Report a useful message
+   #
+   print "
+<TITLE>Glimpse not found</TITLE>
+</HEAD>
+<BODY>
+<H1>Glimpse not found</H1>
+
+This gateway relies on <CODE>Glimpse</CODE> search tool.
+If it is installed, please set the correct path in the script file.
+Otherwise obtain the latest version from
+<A HREF=\"file://ftp.cs.arizona.edu/glimpse\">ftp.cs.arizona.edu</A>
+</BODY>
+";
+   &diag_exit;
+}
+
+##########################################################################
+sub err_badglimpse {
+   my(@glines) = @_;
+   #
+   # Glimpse had an error
+   # Report a useful message
+   #
+   print "
+<TITLE>Glimpse error</TITLE>
+</HEAD>
+<BODY>
+<H1>Glimpse error</H1>
+
+The search parameters caused an error in the call to Glimpse.
+<p>
+Please try your search again with different parameters.
+<p>
+<hr>
+Output from Glimpse:
+<pre>
+@glines
+</pre>
+<br>
+<hr>
+</BODY>
+";
+   &diag_exit;
+}
+
+##########################################################################
+sub err_noindex {
+	local ($indexdir) = @_;
+# Glimpse index was not found
+# Give recommendations for indexing
+	print "<TITLE>Glimpse Index not found</TITLE>\n";
+	print "</HEAD>\n";
+	print "<BODY>\n";
+	print "<H1>Glimpse Index in directory '$indexdir' not found</H1>\n";
+	print "Glimpse cannot proceed without index.\n";
+	print "Please check if the directory being searched is indexed\n";
+	print "by <code>glimpseindex</code>.\n";
+	print "</BODY>\n";
+	print "</html>\n";
+	&diag_exit;
+}
+
+##########################################################################
+sub err_conf {
+# Glimpse archive Configuration File was not found
+	print "<TITLE>Glimpse Archive Configuration File not found</TITLE>\n";
+	print "</HEAD>\n";
+	print "<BODY>\n";
+	print "<H1>Glimpse Archive Configuration File not found</H1>\n";
+	print "Cannot open configuration file $indexdir/archive.cfg\n";
+	print "</BODY>\n";
+	print "</html>\n";
+	&diag_exit;
+}
+
+##########################################################################
+sub err_badquery {
+	print "<TITLE>Query is too broad</TITLE>\n";
+	print "</HEAD>\n";
+	print "<BODY>\n";
+	print "<H1>Query is too broad</H1>\n";
+	print "The query \"$pquery\" doesn't contain any words and ".
+		"thus will take too much time. Please refine your query.\n";
+	print "</BODY>\n";
+	print "</html>\n";
+	&diag_exit;
+}
+
+##########################################################################
+sub err_locked {
+	print "<TITLE>Indexing in progress</TITLE>\n";
+	print "</HEAD>\n";
+	print "<BODY>\n";
+	print "<H1>Indexing in progress</H1>\n";
+	print "The archive is currently reindexing.  Please try your query later.\n";
+	print "</BODY>\n";
+	print "</html>\n";
+	&diag_exit;
+}
+
+sub lookup_title{
+	local($file) = @_;
+	local($intitle, $title);
+	if (open(IN, "<$file")) {
+		$intitle = 0;
+		line: while (<IN>) {
+			chomp;
+			if((/\<title\>(.*)$/i)) {
+				$intitle = 1;
+				$title = $1;
+			} elsif ($intitle) {
+				$title .= " $_";
+			}
+			if ($intitle && $title =~ s#</title>.*##i) {
+				last line;
+			}
+		}
+		close(IN);
+	}
+	# if there's no title, just return "", let webglimpse write 'No title'.
+	# if($title eq ""){
+		# $title="No title";
+	# }
+
+	return $title;
+}
+
+
+
+########################################################################
+########################################################################
+### SITECONF FUNCTIONS
+########################################################################
+########################################################################
+sub siteconf_LocalFile2Url {
+   local($file) = @_;
+   local($alias, $homedir, $url);
+ 
+   if ($Port eq "80")   {
+      $portPart = "";
+   } else   {
+      $portPart = ":$Port";
+   }
+ 
+   if ($file =~ /^$DocumentRoot(.*)/)  {
+      $url = "http://$Server$portPart/$1";
+      return $url;
+   }
+ 
+   #  We are NOT going for longest match.
+   foreach $alias (keys %AliasList)  {
+      $homedir = $Alias{$alias};
+      if ($file =~ /^$homedir(.*)$/)   {
+         $url = "http://$Server$portPart$alias/$1";
+         return $url;
+      }
+   }
+ 
+   return "";
+}
+
+########################################################################
+sub siteconf_ReadConf   {
+   local(@thearray);
+ 
+   open (WMCONF, "$wgConfPath") || die "Cannot read $wgConfPath.\n";
+#  hmm, I am not sure if it's a bug. If you have 2 of
+#  DirectoryIndex, UserDir or DocumentRoot, we use the last one.
+ 
+   # load up the HomeDirArray
+   while(@thearray = getpwent()){
+      $HomeDir{@thearray[0]} = @thearray[7];
+   }
+ 
+   while (<WMCONF>)  {
+      if (/^DirectoryIndex[\s]*([\S]*)/i) {
+         $DirectoryIndex = $1;
+      } elsif (/^UserDir[\s]*([\S]*)$/i)  {
+         $UserDir = $1;
+      } elsif (/^DocumentRoot[\s]*([\S]*)$/i)   {
+         $DocumentRoot = $1;
+      } elsif (/^Alias[\s]*([\S]*)[\s]*([\S]*)$/i) {
+         push(@AliasList, $2);
+      } elsif (/^ScriptAlias[\s]*([\S]*)[\s]*([\S]*)$/i) {
+         push(@ScriptAliasList, $2);
+      } elsif (/^Port[\s]*([\S]*)$/i)  {
+         $Port = $1;
+      } elsif (/^Server[\s]*([\S]*)$/i)   {
+         $Server = $1;
+      }
+   }
+   if ($DirectoryIndex eq "") {
+      $DirectoryIndex = "index.html";
+   }
+   local($name,$aliases,$dm3,$dm4,$addrs) = gethostbyname($Server);
+   local($alias);
+}
+ 
+
+
+
+

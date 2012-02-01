@@ -1,0 +1,283 @@
+#!/usr/bin/perl
+#
+# Archive maker for webglimpse
+##############################################
+
+# Location of httpd directory
+$WEBGLIMPSE_HOME = "/www/data/gaffa/webglimpse1.1/webglimpse";
+
+# get the paths for perl and glimpse
+$PERL = "/usr/bin/perl";
+$GLIMPSE_LOC = "/usr/local/glimpse";
+$GLIMPSEIDX_LOC = "/usr/local/glimpseindex";
+$WEBGLIMPSE_DIST = "$WEBGLIMPSE_HOME/dist";
+
+# make the formats okay
+chomp $PERL;
+chomp $GLIMPSE_LOC;
+chomp $GLIMPSEIDX_LOC;
+
+##############################################
+#                                            #
+# no configuration is needed below this line #
+#                                            #
+##############################################
+# lib directory
+$WEBGLIMPSE_LIB = "$WEBGLIMPSE_HOME/lib";
+
+# robot that retrieves files
+$GHROBOT="$WEBGLIMPSE_HOME/makenh";
+
+# to make the cron (reindexing) script
+$MAKECRON = "$WEBGLIMPSE_HOME/makecron";
+
+# to add the search box
+$ADDSEARCH = "$WEBGLIMPSE_HOME/addsearch";
+
+# name of cron file
+$CRONFILE = "wgreindex";
+
+$MADENH = ".wg_madenh";
+
+# removal script
+$REMOVE = "rmarc";
+
+# Glimpse indexing options
+#$GLIMPSEIDX_OPTIONS = "-o -t"; Added -h -X -U -f -C --> bgopal oct/6/96
+$GLIMPSEIDX_OPTIONS = "-o -t -h -X -U -f -C";
+
+# version
+$VERSION="1.1b1";
+
+######## defaults ########
+$title="WebGlimpse Search";
+$url="http://www.your.server.name.here/path/to/directory";
+$traverse_type = "0";
+$numhops = 2;
+$explicit_only =0;
+$nhhops = 2;
+$local_limit = 99999;
+$remote_limit = 250;
+$addboxes = 1;
+
+# permission information
+$umaskval = umask(0022);
+# for executables
+$xmodval = 0755;
+
+# force flushing of buffer on system calls
+$| = 1;
+
+
+# config is the file to create
+$dir = `pwd`;
+chomp $dir;
+
+#---------------------------------
+# make my libraries more important
+unshift(@INC, "$WEBGLIMPSE_LIB");
+require "webgutils.pl";
+require "config.pl";
+
+
+# print initial message
+print
+"This is WebGlimpse $VERSION archive configuration.\n";
+print
+"For information on how to run this program see\n";
+print "http://glimpse.cs.arizona.edu/webglimpse/confarc.html.\n";
+print "(We recommend that you look at that page while answering the questions below.)\n\n";
+
+# prompt user for directory to make archive in
+$indexdir = &prompt("Directory where the index and other WebGlimpse generated files will reside", $dir);
+
+# pre-set localscope
+$localscope=1;
+
+$found_archive=0;
+# if config exists, read it in, and use these for a default
+if (&TestConfig($indexdir)!=0){
+	$found_archive=1;
+	print "\nFound archive.  Reading in previous settings.\n";
+
+	# read the settings
+	# ($title, $url, $traverse_type, $numhops,$nhhops,$addboxes) =
+		# &ReadConfig($indexdir);
+   ($title, $urlpath, $traverse_type, $explicit_only, $numhops,
+    $nhhops, $local_limit, $remote_limit, $addboxes, @urllist) = ReadConfig($indexdir);
+}
+
+# prompt user for information
+$url =  &prompt("A URL path to get to the directory listed above",$url);
+
+$title =        &prompt("Archive title ",$title);
+
+
+# prompt for the nh configuration
+$traverse_t = read_bool("Do you want to build the archive based on traversal from given URLs?", "y");
+if ($traverse_t == "n") { 
+	$traverse_type=2;
+	print "Subdirectory-based neighborhoods will be used.\n";
+	$numhops=0;
+	$nhhops=0;
+}
+else {
+	$remote_q = read_bool("Do you allow traversal of remote pages?", "n");
+	if ($remote_q == 1) { $traverse_type = 1;}
+	else {$traverse_type=0;}
+   if($traverse_type==1){
+		# we need to know if it's explicit only
+		$explicit_only = read_bool("Follow only *explicitly* defined remote links?", "y");
+	}
+   $numhops=0;
+   $oldnumhops=$numhops;
+   while($numhops<=0){
+      $numhops = &prompt("Number of allowed hops from each root URL",$oldnumhops);
+   }
+      $local_limit = &prompt("maximum number of local pages",$local_limit);
+      if ($traverse_type == 1) {
+		$remote_limit = &prompt("maximum number of remote pages",$remote_limit);
+		}
+	# prompt for the number of hops that the neighborhoods will consist of
+	# nhhops must be greater than zero
+	$oldnhhops=$nhhops;
+	$nhhops=0;
+	while($nhhops<=0){
+      $nhhops = &prompt("Define a neighborhood by the following number of hops from each page",$oldnhhops);
+	}
+}
+
+print "**NOTE** Saying 'yes' to the following question will alter HTML\n";
+print "         pages.  However, this should be safe, and is the best\n";
+print "         way to search on a page's neighborhood.\n";
+
+$addboxes = &read_bool("Add search boxes to pages? ", $addboxes);
+
+if($found_archive==1){
+	$indexnow="n";
+}else{
+	$indexnow="y";
+}
+# if the url has a trailing '/', get rid of it
+if($url=~/\/$/) {
+   chop $url;
+}
+
+# generate the comment
+$topcomment = "# These lines should always start with a '#' and
+# may be more than one line.  However, they should all be in one string
+# variable, not an array.  This will be inserted in the top of the file
+# using the SaveConfig option.  Note that this will be *pre*pended 
+# to the top of the file, so any comments that are there already will
+# *still* be there.  This variable should only be set if TestConfig
+# fails above (i.e., there isn't a configuration file already).";
+
+# ask for the starting urls
+my(@urllist) = &make_wgstart($indexdir);
+
+# save the configuration
+if(&SaveConfig($indexdir, $topcomment,
+		$title,$url,$traverse_type,$explicit_only,$numhops,$nhhops,
+		$local_limit, $remote_limit, $addboxes, @urllist) == 0){
+	die "Error saving configuration to file!\n";
+}
+
+# copy the files from the dist directory
+$mycronfile = "$indexdir/$CRONFILE";
+if($found_archive==0){
+	&copy_files($indexdir);
+	# construct the cron file
+	system("$MAKECRON $indexdir");
+}
+
+# touch the .wg_madenh file -- otherwise, the first call to addsearch -r
+# in the cron file will fail
+open(FILE, ">$indexdir/$MADENH");
+close(FILE);
+chmod(0644, "$indexdir/$MADENH");
+
+# send users to the index directory to run wgreindex
+print "Building the configuration files is now completed.\n";
+print "Go to the archive main directory and run wgreindex from there.\n";
+print "You can change any of the configuration files later by editing the file archive.cfg at that directory\n";
+print "\nPlease send us mail at glimpse\@cs.arizona.edu to add your archive to our list.\n";
+
+
+##############################################################################
+## Subroutines
+##############################################################################
+sub copy_files{
+	local($indexdir) = @_;
+	local($file);
+
+	# grab the stuff out of the WEBGLIMPSE_DIST directory and 
+	# prepend a '.'
+	# should be .glimpse-eye.jpg, .wgbox.html, .wgfilter-index, .wgfilter-box and .wgindex.html
+	eval{
+		opendir(DIR, $WEBGLIMPSE_DIST);
+	};
+	if(@$){
+		warn "** ERROR **: cannot open directory $WEBGLIMPSE_DIST for reading!";
+		return;
+	}
+
+	while($file = readdir(DIR)){
+		next if ($file=~/^\./);  # skip if it starts with a .
+
+		if(!-e "$indexdir/.$file"){
+			# copy it into $indexdir
+			print "Copying $file into $indexdir/.$file\n";
+			system("cp $WEBGLIMPSE_DIST/$file $indexdir/.$file");
+			chmod(0644, "$indexdir/.$file");
+		}
+	}
+	closedir(DIR);
+}
+
+##############################################################################
+sub make_wgstart{
+	local($indexdir)=@_;
+	local(@startlist, $url, $yn);
+
+	# just return if it already exists; don't overwrite
+	# if(-e "$indexdir/.wgstart"){
+		# print "You have already configured the starting urls for your archive.\n";
+		# $yn = &read_bool("Would you like to re-enter a new list?\n","n");
+		# if($yn==0){
+			# return;
+		# }
+	# }
+
+	# make .wgstart
+	print "\n\nNow you will need to enter the URL(s) of the file(s) you would\n";
+	print "like to traverse.  Enter a blank line to exit this portion.\n";
+
+	print "URL: ";
+	while(<STDIN>){
+		$url = $_;
+		chomp($url);
+		if($url eq ""){
+			last;
+		}
+		push(@startlist, $url);
+		print "URL: ";
+	}
+
+	# print "Saving urls to $indexdir/.wgstart ...\n";
+
+	# eval{
+		# open(FILE, ">$indexdir/.wgstart");
+	# };
+	# if(@$){
+		# warn "** ERROR **: cannot open file $indexdir/.wgstart for writing!";
+		# return;
+	# }
+# 
+	# foreach $url(@startlist){
+		# print FILE "$url\n";
+	# }
+	# close FILE;
+	# print "Done writing file.\n";
+
+	return @startlist;
+}

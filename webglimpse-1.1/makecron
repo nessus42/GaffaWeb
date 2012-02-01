@@ -1,0 +1,122 @@
+#!/usr/local/bin/./perl
+
+#
+# cron script maker for webglimpse
+##############################################
+
+# Location of httpd directory
+$WEBGLIMPSE_HOME = "/usr2/bgopal/webglimpse/webglimpse";
+
+# location of 'cat'
+$CAT = "/bin/cat";
+
+# get the paths for perl and glimpse
+$PERL = "/usr/local/bin/./perl";
+$GLIMPSE_LOC = "/home/bgopal/bin/./glimpse";
+$GLIMPSEIDX_LOC = "/home/bgopal/bin/./glimpseindex";
+$CONVERT_LOC = "/home/bgopal/bin/./wgconvert";
+
+# make the formats okay
+chomp $CAT;
+chomp $PERL;
+chomp $GLIMPSE_LOC;
+chomp $GLIMPSEIDX_LOC;
+chomp $CONVERT_LOC;
+
+##############################################
+#                                            #
+# no configuration is needed below this line #
+#                                            #
+##############################################
+# lock file
+$LOCKFILE = "indexing-in-progress";
+
+# lib directory
+$WEBGLIMPSE_LIB = "$WEBGLIMPSE_HOME/lib";
+
+# robot that retrieves files
+$GHROBOT="$WEBGLIMPSE_HOME/makenh";
+
+# to add the search box
+$ADDSEARCH = "$WEBGLIMPSE_HOME/addsearch";
+
+# name of cron file
+$CRONFILE = "wgreindex";
+
+# name of list of files to index
+$TOINDEX = ".wg_toindex";
+
+# name of list of files for which neighbourhoods have been created --> bgopal oct/8/96
+$MADENH = ".wg_madenh";
+
+# options for Glimpseindex
+#$GLIMPSEIDX_OPTIONS = "-o -t -F"; Added -h -X -U -f -C --> bgopal oct/6/96
+$GLIMPSEIDX_OPTIONS = "-o -t -h -X -U -f -C -F";
+
+# Added options for convert --> bgopal oct/6/1996
+$CONVERT_OPTIONS = "-U -P .nh. -M -F -ni";
+
+# version
+$VERSION="1.1b1";
+
+######## entry point ########
+$indexdir = $ARGV[0];
+# justify indexdir, and get the 'real', full path
+if($indexdir eq ""){
+	$indexdir=".";
+}
+$startpwd = `pwd`;
+chomp($startpwd); # remove the \n
+chdir($indexdir);
+$indexdir = `pwd`;
+chomp($indexdir); # remove the \n
+chdir($startpwd);
+
+$cronfile = $indexdir."/".$CRONFILE;
+
+print "\n\nMaking reindexing script $cronfile\n";
+
+$SHELL = `which sh`;
+
+open(OUT, ">$cronfile") || die "Cannot open $cronfile: ";
+print OUT "#!$SHELL\n\n";
+
+print OUT "# create a file to insure that no one searches during an index\n";
+print OUT "touch $indexdir/$LOCKFILE\n\n";
+
+print OUT "# CRONFILE FOR ARCHIVE IN DIRECTORY $indexdir\n\n";
+
+print OUT "# delete the search boxes in all current files (filelist may change\n";
+print OUT "$ADDSEARCH $indexdir -r \n\n";
+
+print OUT "# Do the retrieving\n";
+print OUT "$GHROBOT $indexdir\n\n";
+
+print OUT "# put the search box in the html files -- will check config file\n";
+print OUT "#  and will not do anything if not wanted\n";
+print OUT "$ADDSEARCH $indexdir\n\n";
+
+print OUT "# Do the indexing\n";
+$command = "$CAT $indexdir/$TOINDEX | ".
+		"$GLIMPSEIDX_LOC -H ".$indexdir." $GLIMPSEIDX_OPTIONS";
+print OUT "$command\n\n";
+
+#Added convert --> bgopal oct/6/1996
+print OUT "# Compress neighbourhood files\n";
+$command = "$CAT $indexdir/$MADENH | ".
+		"$CONVERT_LOC -H ".$indexdir." $CONVERT_OPTIONS";
+print OUT "$command\n\n";
+
+print OUT "# now change the directory and set the permissions\n";
+print OUT "cd $indexdir\n";
+print OUT "chmod a+r .glimpse_*\n\n";
+
+print OUT "# remove the locking file\n";
+print OUT "/bin/rm -f $indexdir/$LOCKFILE\n\n";
+
+close (OUT);
+
+# change the permissions so we can execute it
+chmod (0755, $cronfile);
+
+

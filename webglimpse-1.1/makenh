@@ -1,0 +1,1291 @@
+#!/usr/local/bin/./perl
+
+##########################################################################
+# Created March/April 1996, Michael D. Smith
+# Part of WebGlimpse (GlimpseHTTP) research with Udi Manber
+# Glimpse mailing list: glimpse@cs.arizona.edu
+# WebGlimpse home page: http://glimpse.cs.arizona.edu/webglimpse
+# All documentations are there.
+#
+# Modified by Dachuan Zhang, May 23, 1996
+#	. Use arrays instead of associative arrays for IndexAD & AddSearchAD
+#	to maintain the order of patterns.
+#	. Perl subroutine is used instead of binary 'get_href'
+#	. Unused procs like old_traverse are gone.
+#	. Deal differently with Sub-directory option.
+#
+# Modified by Michael Smith, Sept 23, 1996
+#  - in-lined libraries for efficiency 
+#  - cleaned up some code
+#
+# Modified into version 1.1b1 by Michael Smith, Burra Gopal, and Udi Manber
+# November 22, 1996
+# lots of added features.  
+##########################################################################
+
+##########################################################################
+## GLOBALS
+##########################################################################
+$archivedir = $ARGV[0];
+undef %NEIGHBORHOOD;		# stored as LOCAL files, value: # of times
+undef %LINKS;				# file->links (as FILES)
+undef %URL2FILE;			# url->files
+undef %ROBOTDATA;			# cached data from sites -- robot permissions
+undef %TOINDEX;			# list of files to index
+#%IndexAD={};	# allow/deny of files to index
+#%AddSearchAD={};	# allow/deny of files to add search box
+### unused
+# @LocalFiles=();
+$archivepwd = "";
+$archiveprot ="";
+$archivehost ="";
+$archiveport ="";
+$archivepath ="";
+$archiveurl = "http://www.myserver.xxx/path/to/archive";
+$globalfilenum=0;
+$HTMLFILE_RE = "((.s?html)|(.sht)|(.htm))\$";
+$SITE_RE = '[^:]+:\/\/([^\/]+)\/.*';
+$NumLocalCollected = 0;
+$NumRemoteCollected = 0;
+# LOGFILE, ERRFILE -- files for logging
+
+### *TO CHANGE TRAVERSAL*
+### SET THIS VARIABLE TO 0 FOR MORE 'LENIENT' TRAVERSAL
+$LIMIT_TRAVERSAL = 1;
+
+
+##########################################################################
+## SETTINGS 
+##########################################################################
+# to be changed
+$WEBGLIMPSE_HOME = "/usr2/bgopal/webglimpse/webglimpse";
+
+# static
+$nh_pre = ".nh.";
+$WEBGLIMPSE_LIB = "$WEBGLIMPSE_HOME/lib";
+$GETHTTP_CMD = "$WEBGLIMPSE_LIB/httpget";
+$GETURL_CMD = "$WEBGLIMPSE_LIB/url_get";
+
+# name of config file
+# $CONFIGFILE = "archive.cfg";
+
+
+# files and dirs in the archivepwd
+$TEMPROBOTFILE = "robots.tmp";
+$MAPFILE= ".wgmapfile";
+$REMOTEDIR = ".remote";
+$WGINDEX = ".wgfilter-index";
+$MADENH = ".wg_madenh";
+$FLISTFNAME = ".wg_toindex";
+$ERRFILENAME = ".wg_err";
+$LOGFILENAME = ".wg_log";
+# $STARTFILE = ".wgstart";
+$WGADDSEARCH = ".wgfilter-box";
+
+$ROBOTNAME = "HTTPGET";
+
+
+
+
+##########################################################################
+## ENTRY POINT
+##########################################################################
+
+$| = 1;
+
+#---------------------------------
+# make my libraries more important
+unshift(@INC, "$WEBGLIMPSE_LIB");
+
+require "URL.pl";
+require "siteconf.pl";
+require "config.pl";
+
+## included below -- not needed any more
+# require "webgutils.pl";
+# require "normalize.pl";
+# require "get_href.pl"; 
+#---------------------------------
+
+
+if($archivedir eq "") {
+   $archivedir = ".";  # make it current dir
+}
+
+# try to change the directory to indexdir
+$startpwd = `pwd`;
+$retval = chdir ($archivedir);
+if($retval==0){
+   print "Cannot change directory to $archivedir.  Quitting.\n";
+   exit -3;
+}
+
+# get the 'real' path
+$archivepwd = `pwd`;
+chomp $archivepwd;
+
+# make sure it has a configuration file
+if(&TestConfig($archivepwd)==0){
+   print "Cannot find configuration file for archive.  Quitting.\n";
+   exit -4;
+}
+
+#----------------------
+
+
+# make the .remote directory if it doesn't exist
+if(!(-d $REMOTEDIR)){
+   mkdir($REMOTEDIR, 0755);
+   chmod(0755, $REMOTEDIR);
+}else{
+   # clean out the directory 
+   `rm -rf $REMOTEDIR/*`;
+}
+
+# get the settings from the configuration file
+# there should be no problem opening this file -- we know it exists
+# read the settings
+# ($title, $url, $traverse_type, $numhops, $nhhops,
+#  $addboxes) = &ReadConfig($archivepwd);
+($title, $urlpath, $traverse_type, $explicit_only, $numhops,
+  $nhhops, $local_limit, $remote_limit, $addboxes, @urllist) = ReadConfig($archivepwd);
+
+print LOGFILE "From Configuration:\n";
+my(@configlist) = qw( title urlpath traverse_type explicit_only numhops
+	nhhops local_limit remote_limit addboxes ) ;
+foreach $item (@configlist) 
+{
+	eval "$value = \$$item";
+	print LOGFILE " $item: $value\n";
+}
+print LOGFILE " urllist: @urllist\n\n";
+
+if($traverse_type==1){
+   print "Getting remote links, $numhops hops...\n";
+}elsif ($traverse_type==2){
+   print "Getting local links by subdirectory...\n";
+}else{
+   print "Getting local links by hops, $numhops hops...\n";
+}
+print "Neighborhood will be $nhhops hops.\n";
+
+# set the robots file to the archivepwd
+$REMOTEDIR = "$archivepwd/$REMOTEDIR";
+$WGINDEX = "$archivepwd/$WGINDEX";
+$MADENH = "$archivepwd/$MADENH";
+$FLISTFNAME = "$archivepwd/$FLISTFNAME";
+$ERRFILENAME = "$archivepwd/$ERRFILENAME";
+$LOGFILENAME = "$archivepwd/$LOGFILENAME";
+$MAPFILE = "$archivepwd/$MAPFILE";
+$TEMPROBOTSFILE = "$archivepwd/$TEMPROBOTSFILE";
+$WGADDSEARCH = "$archivepwd/$WGADDSEARCH";
+
+($archiveprot, $archivehost, $archiveport, $archivepath) = 
+   &url::parse_url($archiveurl);
+
+# open map
+&open_map();
+
+# open logs
+&open_logs();
+
+# open the file of files to index
+open(FLIST, ">$FLISTFNAME") || die "Cannot open file $FLISTFNAME.  Aborting.";
+
+# open the MADENH file
+open(NEIGH, ">$MADENH") || die "Cannot open file $MADENH.  Aborting.";
+
+# read in the .wgfilter-index into IndexAD
+&open_indexallowdeny("$WGINDEX");
+
+# read in the .wgfilter-box into AddSearchAllowDeny
+&open_searchallowdeny("$WGADDSEARCH");
+
+# read in the site configuration
+&siteconf::ReadConf();
+&siteconf::LoadCache();
+
+###############
+### PHASE 1 ###
+###############
+# TRAVERSE SITE
+
+# first, clear the .remote dir
+system("/bin/rm -f $REMOTEDIR/*");
+
+# for each file in the .wgstart
+# open(WGSTART, "$STARTFILE") || die "Cannot open $STARTFILE";
+# @startlist = <WGSTART>;
+foreach $url(@urllist){
+   chomp($url);
+   $file = &siteconf::LocalUrl2File($url);
+   
+   if ($traverse_type == 2)	{
+      #	For sub-directory option.
+      $file =~ s/(\/)[^\/]+$/\//;
+      $url =~ s/(\/)[^\/]+$/\//;
+      $URL2FILE{$url}=$file;
+      print LOGFILE "Starting from url: $url as dir: $file\n";
+      &IndexDir($url, $file);
+   } else	{
+      #	For # of hops option.
+      print LOGFILE "Starting from url: $url, file: $file\n";
+      # Traverse the files...
+      # &traverse($url, $file);		# puts lists in global variables
+      &new_traverse($url, $file, $numhops);
+   }
+}
+&siteconf::SaveCache();
+
+# output some indexing data
+print "\n\n------------------------------------------------------\nCollected $NumLocalCollected local pages and $NumRemoteCollected remote pages.\n------------------------------------------------------\n\n";
+
+###############
+### PHASE 2 ###
+###############
+# store the data we got from the traversal
+
+# write out the TOINDEX array to .wg_toindex
+# while(($file, $url) = (each %TOINDEX)) {
+# 	print FLIST "$file\n";
+# }
+while(($url, $file) = (each %URL2FILE)) {
+   print FLIST "$file $url\n";
+}
+close(FLIST);
+
+###############
+### PHASE 3 ###
+###############
+# for each local file, if writable, create neighborhood and search box
+
+### TO DO -- either create LocalFiles, or use TOINDEX and test 
+###          if it's in the .remote directory
+while(($file, $junk) = each %TOINDEX){
+   # if it's not a remote file, try to create a neighborhood
+   if($file !~ /^$REMOTEDIR/){
+      # check if not excluded by the wgfilter-box file
+      if(&okay_to_addsearch($file)==1){
+	      # check if we can write the file 
+	      if(-w $file){
+	         if(create_neighborhood($file, $nhhops)==1){
+	            if(store_neighborhood($file)!=0){
+		            # if we wrote something into a neighborhood file for it, 
+		            #  write the file to the .neighborhooded file
+		            # this info will be used by addsearch
+		            print NEIGH "$file\n";
+	            }else{
+						print LOGFILE "Unable to store neighborhood for $file.\n";
+					}
+	         }else{
+			      print LOGFILE "No neighborhood for $file: cannot create a neighborhood.\n";
+	         }
+	      }else{
+			   print LOGFILE "No neighborhood for $file: cannot write the .nh file.\n";
+	      }
+      }else{
+			print LOGFILE "No neighborhood for $file: excluded by wgfilter-box.\n";
+      }
+   }else{
+      print LOGFILE "No neighborhood for $file; it's remote.\n";
+   }
+}
+close NEIGH;  # close the neighborhooded file
+
+# called by wgreindex
+# system("$ADDSEARCH $archivepwd");  # uses the .neighborhooded file
+
+
+### CLOSE UP SHOP ###
+
+&close_map();
+
+&close_logs();
+
+# remove the robots file
+system("rm -rf $TEMPROBOTFILE");
+
+#----------------------
+#change the dir back
+chdir($startpwd);
+
+#Added by bgopal, 12:45pm, Nov 13 1996
+#&DB'perlprof if defined &DB'perlprof;
+
+
+
+
+##########################################################################
+### PROCEDURES
+##########################################################################
+
+##########################################################################
+sub okay_to_addsearch{
+   my($file)=@_;
+   my($index, $found, $pattern, $allowdeny, $i);
+   
+   # first, check if it's excluded
+   $index=1;  # by default, it's accepted
+   
+   # this loop is hacked because while/each doesn't re-enter correctly
+   $found=0;
+   #	print "$file\n";
+   foreach $i (0 .. $#AddSearchPAT)	{
+      $pattern = $AddSearchPAT[$i];
+      $allowdeny= $AddSearchAD[$i];
+      #	print "$pattern $allowdeny\n";
+      if($file=~/$pattern/){
+	 $index=$allowdeny;
+	 last;
+      }
+   }
+   return $index;
+}
+
+##########################################################################
+# takes 2 params -- file name and assoc array
+# uses both BY REFERENCE
+sub open_indexallowdeny{
+   my($lineno, $AD, $pat, $i);
+   
+   # read in the info from file
+   eval{
+      open(FILE, "$_[0]");
+   };
+   if($@){
+      warn "Cannot open file $_[0]\n";
+      return;
+   }
+   
+   $lineno=0;
+   $i = 0;
+   while(<FILE>){
+      $lineno++;
+      /(\S+)\s*(\S+)/;
+      $AD = $1;
+      $pat = $2;
+      if($AD=~/Allow/i){
+	 $IndexPAT[$i] = $pat;
+	 $IndexAD[$i] = 1;
+      }elsif ($1=~/Deny/i){
+	 $IndexPAT[$i] = $pat;
+	 $IndexAD[$i] = 0;
+      }else{
+	 print "Syntax error in $_[0], line $lineno\n";
+      }
+      $i++;
+   }
+   close FILE;
+}
+
+##########################################################################
+# takes 2 params -- file name and assoc array
+# uses both BY REFERENCE
+sub open_searchallowdeny{
+   my($lineno, $AD, $pat, $i);
+   
+   # read in the info from file
+   eval{
+      open(FILE, "$_[0]");
+   };
+   if($@){
+      warn "Cannot open file $_[0]\n";
+      return;
+   }
+   
+   $lineno=0;
+   $i = 0;
+   while(<FILE>){
+      $lineno++;
+      /(\S+)\s*(\S+)/;
+      $AD = $1;
+      $pat = $2;
+      if($AD=~/Allow/i){
+	 $AddSearchPAT[$i] = $pat;
+	 $AddSearchAD[$i] = 1;
+      }elsif ($AD=~/Deny/i){
+	 $AddSearchPAT[$i] = $pat;
+	 $AddSearchAD[$i] = 0;
+      }else{
+	 print "Syntax error in $_[0], line $lineno\n";
+      }
+      $i ++;
+   }
+   close FILE;
+   
+}
+
+##########################################################################
+sub store_neighborhood{
+   my($origfile)=@_;
+   my($name, $num, $file);
+   
+   $file = $origfile;
+   # prepend the .nh_
+   $file =~ s/([^\/]+)$/$nh_pre$1/;
+   eval{
+      open(FILE, ">$file");
+   };
+   if ($@) {
+      print LOGFILE "Cannot open neighborhood file $file.\n";
+      # failure
+      return 0; 
+   }
+   
+   # go through the NEIGHBORHOOD and print all entries
+   $num=0;
+   while(($name, $junk)=each %NEIGHBORHOOD){
+      $num++;
+      print FILE "$name\n";
+   }
+   close(FILE);
+   chmod(0644, $file);
+   
+   if($num==0){
+      print LOGFILE "No neighborhood for $origfile.  Not adding search box to it.\n";
+      unlink($file);   # just delete the neighborhood
+   }
+   
+   return $num; # returns the number in the neighborhood
+}
+
+##########################################################################
+sub create_neighborhood{
+   my($file, $hops)=@_;
+   my($i, @links,@nextlinks);
+
+   # print "Creating neighborhood for $file.\n";
+   
+   # clear it
+   undef %NEIGHBORHOOD;
+   
+   if($hops<0){
+      my($dir);
+      
+      # just strip the file name from the $file
+      $dir = $file;
+      $dir =~ s/[^\/]+$//;
+      $NEIGHBORHOOD{$dir}=1;
+      return 1; # success
+   }else{
+      # create the initial list of entries
+		@links = split(",", $LINKS{$file});
+
+		# put all these links in the hash table
+		foreach $link(@links){
+			if($link ne ""){
+				$NEIGHBORHOOD{$link} = 1;
+         }
+      }
+      
+      # go n hops in
+      for($i=1; $i<$hops; $i++){
+			# clear the 'nextlinks' array
+			undef @nextlinks;
+
+	 		# get all the links for each link
+	 		foreach $link(@links){
+				# get the list of links for this link and add this to the list
+				push(@nextlinks, split(",",$LINKS{$link}));
+	 		}
+
+			# clear the list for the next round
+			undef @links;
+
+			# add all the elements to the hash table
+			foreach $link(@nextlinks){
+				if($NEIGHBORHOOD{$link}!=1){
+					# if it's not already in the table, 
+					#  add it, and traverse next time
+					$NEIGHBORHOOD{$link}=1;
+					push(@links, $link);
+				}
+			}
+
+			my($numlinks) = @links;
+			if($numlinks==0){
+				last;
+			}
+      }
+      
+      ## split it all up and add to neighborhood
+      # @links = split(",", $linkstring);
+      # foreach $link(@links){
+	 		# if($link ne ""){
+	    		# $NEIGHBORHOOD{$link} = 1;
+	 		# }
+      # }
+      
+      # Added by bgopal, 11/14/96
+      #undef @nextlinks;
+      #undef @links;
+
+      return 1; # success
+   }
+}
+
+##########################################################################
+sub close_logs{
+   close ERRFILE;
+   close LOGFILE;
+}
+
+##########################################################################
+sub open_logs{
+   open(ERRFILE, ">$ERRFILENAME");
+   open(LOGFILE, ">$LOGFILENAME");
+}
+
+##########################################################################
+sub open_map{
+   open(MAP, ">$MAPFILE") || die "Cannot open map file: ";
+   ### TO DO -- read map file?
+}
+
+##########################################################################
+sub close_map{
+   while (($key, $value)=each %URL2FILE){
+      print MAP "$key $value\n";
+   }
+   close(MAP);
+   
+   # change permissions
+   chmod (0644, "$MAPFILE");
+}
+
+##########################################################################
+sub getlinks{
+   my($file, $url) = @_;
+   my($links, @output);
+   
+   # check if it's in the lookup table
+   $links = $LINKS{$file};
+   if($links ne ""){
+      return $links;
+   }
+   
+   # if not in table,
+   # get the hrefs
+   # @output = `$GETHREF_CMD $file`;
+   # chop(@output);	# remove the \n
+   @output = &get_href($file);
+
+	# print "Output from get_href: @output\n";
+
+   # absolutify the links
+   @output = &normalize($url, @output);
+
+	# print "Output from normalization: @output\n";
+
+   # print "Links from url $url, file $file are: @output\n";
+   
+   # remove dups and mailtos
+   my(%THISLIST, $link);
+   undef %THISLIST;
+   foreach $link (@output){
+      if($link=~/^mailto:/i ||
+	 $link=~/^file:/i ){
+	# do nothing -- skip it
+      }elsif ($THISLIST{$link} eq "1"){
+	 # it's a dup!
+	 splice(@output, $n, 1);
+	 $size--;
+      }else{
+	 # not a dup or mailto -- add to list and go on
+	 $THISLIST{$link} = "1";
+	 $n++;
+      }
+   }
+
+   # join and store in the lookup table
+   $links = join(",", keys %THISLIST );
+   $LINKS{$file} = $links;
+   
+   return $links;
+}
+
+##########################################################################
+sub ungetnewname{
+   $globalfilenum--;
+}
+
+##########################################################################
+sub getnewname{
+   my($file) = @_;
+   
+   # if it ends in a /, just call it '.html' 
+   if($file=~/\/$/){
+      $ext=".html";
+   }else{
+      # put the extension onto the filename returned
+      $file =~ /\.([^\/\.]+)$/;
+      $ext = $1;
+      if($ext ne ""){
+	 $ext = ".$ext";
+      }
+   }
+   
+   $globalfilenum++;
+   return "$REMOTEDIR/$globalfilenum$ext";
+}
+
+##########################################################################
+sub robotsokay{
+   my($url)=@_;
+   my($prot, $host, $port, $path) = &url::parse_url($url);
+   
+   # if the protocol isn't http, assume it's good
+   if($prot!~/http/i){
+      return 1;
+   }
+   
+   # check for the host in the robots stuff
+   $paths = $ROBOTDATA{$host};
+   if ($paths eq ""){
+      # we don't have it -- go get it
+      $paths = &getrobotfile($host, $port);
+   }
+   
+   # compare the paths and the urls
+   return &pathokay($path, $paths);
+}
+
+##########################################################################
+sub pathokay{
+   my($path, $paths) = @_;
+   my(@patharray,$test);
+   
+   # make sure the path isn't empty -- if it is, it's a /
+   if($path eq ""){
+      $path="/";
+   }
+   
+   # split the string
+   @patharray = split(" ", $paths);
+   
+   # look at the paths -- if the url contains them, return 0
+   foreach $test(@patharray){
+      if($path=~m#$test#){
+	 return 0;
+      }
+   }
+   return 1;
+}
+
+##########################################################################
+sub getrobotfile{
+   my($host, $port)=@_;
+   my(@aliases);
+   my($output);
+   my($olddata, $newdata);
+   my($newprot, $newhost, $newport, $newpath, $url);
+   
+   # make the $url
+   $url = "http://$host:$port/robots.txt";
+   
+   # clear the aliases
+   @aliases=($host);
+   
+   print LOGFILE "Getting robots file from $host:$port...\n  ";
+   
+   # it's an http process -- call httpget
+   $output = `$GETHTTP_CMD $url -o $TEMPROBOTFILE`;
+   
+   while($output ne ""){
+      # more for error?
+      if($output=~/^error/i){
+	 print ERRFILE "Error with getting $url\n";
+	 #			print LOGFILE "Error with getting $url\n";
+	 last;
+      }
+      
+      # look at output for redirect -- store redirects in file, too
+      if($output=~/^Redirect: (.*)$/){
+	 print LOGFILE "Redirected to: $1...";
+	 
+	 # see if we have the redirected server
+	 ($newprot, $newhost, $newport, $newpath) = &url::parse_url($1);
+	 
+	 # add this name to the aliases list
+	 push(@aliases, $newhost);
+	 
+	 $olddata = $ROBOTDATA{$newhost};
+	 if($olddata ne ""){
+	    # set all the values
+	    foreach $newhost(@aliases){
+	       $ROBOTDATA{$newhost}=$olddata;
+	    }
+	    return $olddata;  # return 'bad'
+	 }else{
+	    # try again
+	    $output = `$GETHTTP_CMD $1 -o $TEMPROBOTFILE`;
+	 }
+      }else{
+	 # we've got it, or there's an error...
+	 last;
+      }
+   }
+   print LOGFILE "Done.\n";
+   
+   $newdata = &getrobotpaths();
+   foreach $newhost(@aliases){
+      $ROBOTDATA{$newhost}=$newdata;
+   }
+   return $newdata;  # return 'none'
+}
+
+##########################################################################
+sub getrobotpaths{
+   my(@paths, $newdata);
+   
+   # now we have the robots.txt file in the TEMPROBOTFILE
+   # check it!
+   open(ROBOTFILE, $TEMPROBOTFILE);  # assume it'll work
+   while(<ROBOTFILE>){
+      s/\#.*$//;		# remove comments
+      
+      if(/^User-agent:.*\W$ROBOTNAME\W/io ||
+	 /^User-agent:\s*[*]/io){
+	 # check for paths
+	 print LOGFILE " Found reference to this robot in robot file\n";
+	 while(<ROBOTFILE>){
+	    if(/^Disallow:\s*(\S+)\s*(\#.*)?/){
+	       print LOGFILE " Robot disallowed for $1\n";
+	       push(@paths, $1);
+	    }else{
+	       last;  # we're done with the record
+	    }
+	 }
+      }
+   }
+   
+   #	print LOGFILE " Done parsing robot file\n";
+   close(ROBOTFILE);
+   
+   $pathstring = join(" ", @paths);
+   if($pathstring eq ""){
+      $pathstring = " " ;
+   }
+   return $pathstring;
+}
+
+##########################################################################
+sub geturl2file{
+   my($url) = @_;
+   my($output, $link, $file, $oldfile, @aliases);
+   
+   # check if we have that in stock (we know it's not local)
+   $file = $URL2FILE{$url};
+   if($file ne ""){
+      return $file;
+   }
+   
+   # if we don't already have it, check if we can get it
+   # check for robots.txt
+   print LOGFILE "Checking the robot file for $url...\n";
+   if(&robotsokay($url)==0){
+      # it's not okay to get this.  skip it.
+      #		print LOGFILE "Robot excluded from $url.\n";
+      print ERRFILE "Robot excluded from $url.\n";
+      $file="";
+      return $file;
+   }
+   
+   # clear the aliases
+   @aliases=($url);
+   
+   # order it
+   $file = &getnewname($url);
+   
+   print LOGFILE "Getting $url into $file...\n  ";
+   # print "Getting $url ...\n  ";
+   
+   if($url=~/^http:/i){
+      # it's an http process -- call httpget
+      $output = `$GETHTTP_CMD $url -o $file`;
+      
+      while($output ne ""){
+	 # more for error?
+	 if($output=~/^error/i){
+	    print ERRFILE "Error with getting $url\n";
+	    #				print LOGFILE "Error with getting $url\n";
+	    last;
+	 }
+	 
+	 # look at output for redirect -- store redirects in file, too
+	 if($output=~/^Redirect: (.*)$/){
+	    &ungetnewname();	# rewind the name counter
+	    
+	    #				print LOGFILE "Redirected to: $1...";
+	    
+	    # add this name to the aliases list
+	    push(@aliases, $1);
+	    
+	    # see if we have the redirected name already
+	    $oldfile = $URL2FILE{$1};
+	    if($oldfile ne ""){
+	       # we have it already!  
+	       $file = $oldfile;
+	       
+	       last;
+	    }else{
+	       # try again
+	       $url = $1;
+	       
+	       # check robots.txt for new url
+	       if(&robotsokay($url)==0){
+		  # it's not okay to get this.  skip it.
+		  #						print LOGFILE "Robot excluded from $url.\n";
+		  $file="";
+		  return $file;
+	       }
+	       
+	       $file = &getnewname($url);	# get a new name (extensions matter)
+	       $output = `$GETHTTP_CMD $1 -o $file`;
+	    }
+	 }else{
+	    # we've got it, or there's an error...
+	    last;
+	 }
+      }
+   }else{
+      $output = `$GETURL_CMD -o $file $url`;
+      print LOGFILE "output from urlget: $output\n";	# can't tell if it worked or not
+   }
+   print LOGFILE "Done.\n";
+   
+   # store $url and all redirects to map
+   foreach $url(@aliases){
+      $URL2FILE{$url} = $file;
+   }
+   
+   # change the permissions
+   chmod(0644, $file);
+   
+	$NumRemoteCollected += 1;
+
+   return $file;
+}
+
+##########################################################################
+##########################################################################
+
+### TO DO -- make more robust -- check ip addrs, multiple paths
+sub local_file{
+   my($url) = @_;
+   my($file);
+   my($prot, $host, $port, $path) = &url::parse_url($url);
+   
+   $file="";
+   # convert $url to local file name (if we can)
+   if($host=~/^$archivehost/i &&
+      $prot =~ /^$archiveprot$/i &&
+      $port =~ /^$archiveport$/ &&
+      $path =~/^$archivepath/){
+      
+      $file=$path;
+      
+      # chop off archive path, prepend path
+      $file =~ s/$archivepath/$archivepwd/;
+   }
+   return $file;
+}
+
+#####################################################################
+#	Following procs were added on June 2, 1996.
+#						Dachuan Zhang
+#####################################################################
+
+sub IndexDir {
+   my($url, $dir) = @_;
+   my($link, $file, $i, $cwd, $pattern, $allowdeny, $noindex);
+   
+   print "IndexDir $dir as $url\n";
+   # Find command cannot handle sym-link properly, so we first chdir.
+   $cwd = `pwd`;
+   chdir($dir);
+   open (FileList, "find . -print |");	# pipe in the file list.
+   while (<FileList>)	{
+      chomp;
+      (/\/\.nh\./) && next;
+      (-d $_) && next;
+      $file=$_;
+      $link=$_;
+      $file =~ s/^\.\//$dir/;
+      $link =~ s/^\.\//$url/;
+      
+      $noindex = 1;		# Default: index it.
+      
+      #	print "$link:$file";
+      foreach $i (0 .. $#IndexPAT)	{
+	 $pattern = $IndexPAT[$i];
+	 $allowdeny = $IndexAD[$i];
+	 if ($link =~ /$pattern/)	{
+	    $noindex=$allowdeny;
+	    last;
+	 }
+      }
+      if ($noindex==0)	{
+	 # print " Denied: $link\n";
+	 print LOGFILE "Not indexing $link; excluded.\n";
+      } else	{
+	 print LOGFILE " Accepted: $link\n";
+		### MDSMITH -- added check for local_limit
+		if($NumLocalCollected >= $local_limit){
+			print ERRFILE "Cannot collect $link; already collected local maximum.\n";
+		} else {
+	 		$URL2FILE{$link}=$file;
+	 		$NumLocalCollected += 1;
+	 		$TOINDEX{$file}=1;
+		}
+      }
+   }	
+   chdir $cwd;
+}
+
+
+################################################################################
+# 'in-lined' libraries for efficiency
+#  'require' is *very* poor for performance
+################################################################################
+# NORMALIZE
+################################################################################
+# Modified by Dachuan Zhang, May 23, 1996.
+#	Take baseport into account!
+#---------------------------------------------------------------------------
+sub normalize{
+   my($baseurl,@urllist)=@_;
+   my($basefile, $url);
+   
+   my($baseprot, $basehost, $baseport, $basepath) = &url::parse_url($baseurl);
+   
+   # get the name for the $basehost
+   # ($name, $aliases, $addrtype,$length,@addrs) = gethostbyname($basehost);
+   # ($a,$b,$c,$d) = unpack('C4', $addrs[0]);
+   
+   # separate basepath into basepath and basefile
+   # find the LAST /
+   $basefile = $basepath;
+   $basepath =~ s/\/[^\/]*$//;
+   $basepath .= "/"; # add the last / for the directory
+   
+   # output
+   # print "baseprot = $baseprot, ";
+   # print "basehost = $basehost\n ";
+   # print "baseport = $baseport, ";
+   # print "basepath = $basepath, ";
+   # print "basefile = $basefile\n";
+   
+   foreach $url(@urllist){
+		next if($url =~ /^\s*$/);
+      # print "Original url: $url\n";
+      # punt on the mailtos...
+      if($url=~/^mailto:/i) {
+	 next;
+      }
+      
+      # add things that might be missing.
+      # if it starts with //
+      if($url=~/^\/\//){
+	 # tack on http:
+	 $url = "http:".$url;
+      }
+      # if it has no :// it has no protocol
+      if ($url=~/^:\/\//){
+	 # tack on http
+	 $url = "http".$url;
+      }
+      
+      # if no protocol,
+      if($url!~/^http:/i &&
+	 $url!~/^ftp:/i &&
+	 $url!~/^gopher:/i &&
+	 $url!~/^news:/i){
+	 
+	 # if no / at beginning, it's relative, on same machine, same path
+	 if($url!~/^\//){
+	    $url = $baseprot."://".$basehost.":".$baseport.$basepath.$url;
+	 }else{	# there is a / at the beginning
+	    # it's a new path, same machine
+	    $url = $baseprot."://".$basehost.":".$baseport.$url;
+	 }
+      }
+      # print "URL before parsing: $url\n";
+      
+      my($prot, $host, $port, $path) = &url::parse_url($url);
+      # print "URL after parsing: $prot://$host:$port$path\n";
+      
+      # make sure the path has a preceding /
+      $path = "/$path" if $path!~/^\//;
+      
+      # remove "/A/.." from "/A/../dir"
+      $path =~ s/\/[^\/]+\/\.\.//g;
+      
+      # Uncomment for numbers
+      if($host!~/\d+\.\d+\.\d+\.\d+/){
+      ($name, $aliases, $addrtype,$length,@addrs) = gethostbyname($host);
+      ($a,$b,$c,$d) = unpack('C4', $addrs[0]);
+      
+      # set host to the IP addr to prevent name aliasing
+      $host = "$a.$b.$c.$d";
+      }
+      
+      $url = "$prot://$host:$port$path";
+      # print "URL after normalization: $url\n";
+      
+      # strip off any #text
+      $url =~ s/\#.+$//;
+      
+      # also, for consistency in our database, NO trailing /'s
+      # NO!  This causes a problem with the ROOT
+      # $url =~ s/\/$//;
+      
+   }
+   
+   return @urllist;
+   
+}
+
+
+
+###############################################################################
+# Library- GET_HREF
+###############################################################################
+sub get_href	{
+   my($file) = @_;
+   my ($i, $link, $url, $page);
+   my(@links) ;
+   my(@lnks);
+   
+   $page = &readFile($file);
+   @links = split(/<A[\s]+HREF[\s]*=[\s]*/i, $page);
+   foreach $i (1..$#links)	{
+      $link = $links[$i];
+      if ($link =~ /^\"?([^>\"\s]*)\"?/)	{
+			push(@lnks, $1);
+      }
+   }
+   return @lnks;
+}
+
+sub readFile {
+   my($file) = @_;
+   local(*FH);
+   my(@page);
+	my($string);
+   
+   open (FH, $file) || warn "Cannot open file $file: $@";
+   @page = <FH>;
+   close FH;
+   my($string) = join("",@page);
+   return $string;
+}
+
+
+########################################################################
+## NEW NEW NEW NEW NEW NEW NEW NEW NEW NEW NEW NEW NEW NEW NEW NEW NEW 
+########################################################################
+sub new_traverse {
+   my ($url, $file, $numhops) = @_;
+   my (@thelist);
+
+   push(@thelist, $url);
+
+	### MDSMITH -- added check for local_limit
+	# actually, no check needed here because this is only the first one...
+   $URL2FILE{$url} = $file;
+   $TOINDEX{$file}=1;
+	$NumLocalCollected+=1;
+
+   
+   print "Traversing $numhops hops...\n";
+   for($i=0; $i<$numhops; $i++){
+      # print "The urls after $i hops:\n";
+      # print " @thelist\n";
+
+      # visit the nodes in the list
+      @thelist = visit(@thelist);
+
+      # print "thelist: @thelist\n";
+
+		# if there's nothing more to collect, stop there
+		my($numlinks);
+		$numlinks = @thelist;
+		if($numlinks==0) {
+			print "No more links to traverse.\n";
+			last;
+		}
+   }
+}
+
+sub visit{ 
+   my(@urllist) = @_;
+   my($file);
+	my(%ToTraverse);
+
+   my($at_remote, $urlstat);
+   my($url, $urlstat, $at_remote, @links, $link);
+   my($noindex, $found, $i, $pattern, $allowdeny);
+   my($filname,$link_site, $url_site, @linksasfiles);
+   
+   foreach $url (@urllist) {
+      $file = $URL2FILE{$url};
+
+      # print "Looking at url: $url, file: $file\n";
+
+      # figure out whether this page is local or remote
+
+      $urlstat = &siteconf::CheckUrl($url);
+
+      if($urlstat==$siteconf::URL_REMOTE){
+	 $at_remote=1;
+	 # print "$url is remote\n";
+      }else{
+	 $at_remote=0;
+	 # print "$url is local\n";
+      }
+	 @links = split(",",getlinks($file,$url));
+      # for each link,
+      foreach $link(@links){
+	 #Added by bgopal for testing purposes: Nov 22/1996: 3.15pm
+	 if(($link eq "1") || ($link eq " ")) {
+		next;
+	 }
+
+	 # first, check if it's excluded
+	 $noindex=1;  # by default, it's accepted
+	 $found =0;
+	 
+	 # this loop is hacked because while/each doesn't re-enter correctly
+	 # print "link: $link\n";
+	 foreach $i (0 .. $#IndexPAT)	{
+	    $pattern = $IndexPAT[$i];
+	    $allowdeny = $IndexAD[$i];
+	    # "$pattern $allowdeny\n";
+	    if($link=~/$pattern/){
+	       $noindex=$allowdeny;
+	       last;
+	    }
+	 }
+	 # skip if denied
+	 if ($noindex==0){
+	    # print "Denied\n";
+	    # print LOGFILE "Not indexing $link; excluded.\n";
+	    next;
+	 }
+	 
+	 # convert to local or remote
+	 #disabled for now print "Checking url $link for remote or local..\n";
+
+	 $urlstat = &siteconf::CheckUrl($link);
+	 # print "urlstat for $link: $urlstat\n";
+
+	 # $urlstat = $siteconf::URL_REMOTE;
+	 $filename="";
+	 if($urlstat==$siteconf::URL_REMOTE){
+		# print "Url $link is remote...\n";
+	    if($traverse_type!=1){  # only do if we're allowing remote
+	       # print "Skipping non-local url: $link.\n";
+	       next;
+	    }
+
+		 # check that we haven't already gotten max
+		 if($NumRemoteCollected >= $remote_limit){
+			print ERRFILE "Cannot collect $link; already got maximum number of remote links.\n";
+			next;
+		}
+
+	    # print LOGFILE "File $link is remote.\n";
+	    # print "Getting remote url: $link\n";
+
+	    # if we're at a remote site and we're not allowed to go out of it,
+	    #  limit the traversal
+	    if($LIMIT_TRAVERSAL && $at_remote){
+	       # if the *current* page is remote, and this link is remote,
+	       #  check that they're the same site!
+	       # print "Examining $link on page $url\n";
+	       # get the sites
+	       $link =~ /$SITE_RE/o;
+	       $link_site = $1;
+	       $url =~ /$SITE_RE/o;
+	       $url_site = $1;
+	       # if not the same site, go to the next link
+	       if($link_site ne $url_site){
+		  print ERRFILE "  Cannot go from remote site $url_site to remote site $link_site... skipping $link.\n";
+		  next;
+	       } else {
+		  #disabled for now print "Same site... okay.\n";
+	       }
+	    }
+	    
+	    # if remote file, go get it!
+	    $filename = &geturl2file($link);
+	    # geturl2file puts it into URL2FILE map
+		# print "Got url $link into file $filename.\n";
+	 }
+	 if($urlstat==$siteconf::URL_LOCAL){
+	    # just get the local file name
+		# print "Url $link is local...\n";
+
+	    $filename = &siteconf::LocalUrl2File($link);
+
+	    # LOGFILE "File $link is local: $filename\n";
+	    # print "Local url: $link, file: $filename\n";
+	    if(!(-e $filename)){
+	       print ERRFILE "Cannot find $filename. Not traversing.\n";
+	       next;
+	    }
+	    # if ($TOINDEX{$filename} ne "") {
+	       # add it if it hasn't already been visited
+	    # }
+	    # add this mapping to the list
+
+		### MDSMITH -- added check for local_limit
+		if($NumLocalCollected >= $local_limit){
+			print LOGFILE "Cannot collect $link; already collected local maximum.\n";
+		} else {
+	    $URL2FILE{$link}=$filename;
+		 $NumLocalCollected +=1;
+	   }
+	 }
+	 
+	 if($filename ne ""){
+	    # if we haven't already seen this file, add it to the list
+	    #   to index, and add it to traversal list
+	    if($TOINDEX{$filename}!=1){
+	       # add the file name to the list of files to index
+	       $TOINDEX{$filename}=1;  # use an assoc array to remove dups
+
+	       # push onto the list to traverse
+		# only put on the list if it's not remote, or explicit_only 
+		#  is turned off
+	   ### MDSMITH EXPLICIT_ONLY change
+		if($urlstat!=$siteconf::URL_REMOTE || 
+		   $explicit_only==0 ){
+			$ToTraverse{$link}=1;  # hash to remove dups
+			# print "Putting $link on the list to traverse.\n";
+	       		# push (@TraverseQ, $link);
+		}
+	    }
+	    
+	    # push onto a list of links
+	    push(@linksasfiles, $filename);
+	 }else{
+	    # filename=""... there was an error
+	    print LOGFILE "Error with link: $link.  Cannot recognize as local *or* remote.\n";
+	 }
+      }
+
+      # Added by bgopal, Nov 14 1996
+      undef @links;
+      undef @linksasfiles;
+   }
+
+	my(@TraverseQ) =  keys(%ToTraverse);
+	# print "Returning TraverseQ of @TraverseQ\n";
+
+   # Added by bgopal, Nov 14 1996
+   # undef @urllist;
+
+   return @TraverseQ;
+}

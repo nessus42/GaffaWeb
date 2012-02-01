@@ -1,0 +1,287 @@
+<html>
+<head>
+<title>Gaffaweb - Kate Bush: FAQ - 6.3. How to do ftp?</title>
+</head>
+<body bgcolor="#F0CCFF" background="faq_back.gif"  text="#400080" link="#D422D6" vlink="#9900E6" alink="#F0CCFF">
+
+<h1 align="center"><img src="faq_h_sm.gif" alt="Kate Bush FAQ" width="325" height="58" border="0"></h1>
+
+<pre>
+</pre>
+
+<p align="center"><img src="faq_6top.gif" alt="6. The Archives" width="174" height="25"></p>
+
+<pre>
+
+</pre>
+
+<h2 align="center"><em>6.3. How to do ftp? </em></h2>
+
+<pre>
+
+</pre>
+
+<a href="index.html"><p align="center"><img src="line_toc.gif" alt="----- Back to the FAQ Table of Contents -----" width="600" height="20" border="0">
+</a>
+
+
+<pre>
+
+</pre>
+
+<blockquote>
+
+<p>
+     To use ftp directly you have to have direct access to the internet.
+
+
+<p>
+     You connect by typing
+
+
+<p>
+       <a href="ftp://ftp.UU.NET"> ftp ftp.UU.NET</a>      [or: <a href="ftp://137.39.1.9">ftp 
+137.39.1.9</a>]
+
+
+<p>
+     Log in as &quot;anonymous&quot; or &quot;ftp&quot; and use your username as your password.
+
+
+<p>
+     To change directories e.g. type
+
+
+<p>
+        cd /usenet/rec.music.gaffa
+
+
+<p>
+     Other commands are:
+
+
+<p>
+        dir &lt;dirname&gt;       [get a directory, &lt;dirname&gt; is optional, current if 
+omitted]<br>
+        get &lt;filename&gt;      [get the requested file]<br>
+        bin                 [set transfer to binary mode, this is needed
+                             for pictures and compressed files.  Best is
+                             if you always do 'bin' first, so you don't
+                             forget]<br>
+        bye                 [end the ftp session]
+
+
+
+<pre>
+
+
+</pre>
+
+<a href="#top"><p align="center"><img src="faq_l1.gif" alt="---------------" width="600" height="20" border="0"></a>
+
+<pre>
+
+
+</pre>
+
+
+<p>
+     If you don't have FTP (file transfer ability) you can still get the files
+     by using an FTP mail server run by DEC.  You send it a list of commands
+     and then it sends you the files as regular mail messages, so anyone who
+     has the ability to send and receive private mail can use this.  If a file
+     is larger then 60k it will be send as more than one message.
+
+
+<p>
+     If you want to GET binary files (GIF picture files, Wordperfect files, or
+     anything that's not straight text) it will send you the files in a
+     special text format called UUENCODED, you will need a program called
+     UUDECODE for your computer to decode these.  Note that this is not always
+     the most reliable way of getting files, i.e. you may have to do it
+     several times.
+
+
+<p>
+     To start off using this, send a message to <a href="mailto:ftpmail@decwrl.dec.com">
+ftpmail@decwrl.dec.com</a>, the
+     first message should read simply HELP - don't bother with a subject line
+     as these are ignored.  You will be sent back the basic commands and some
+     examples, read this carefully (as much as you are able to understand).
+     Here are some specific examples for accessing the Love-Hounds archives,
+     don't type the parts in brackets [].  Note that when typing in file
+     names, upper and lower case are important!  Parts in &lt;&gt; have to replaced
+     by something useful.
+
+
+<p>
+     [There is another similar service that can be reached at
+     <a href="mailto:bitftp@pucc.Princeton.edu">bitftp@pucc.Princeton.edu</a> - send a message 
+with body HELP (subject
+     isn't important), and you will receive instructions.  This site seems
+     to be faster than <a href="mailto:ftpmail@decwrl.dec.com">ftpmail@decwrl.dec.com</a>]
+
+
+</blockquote>
+
+
+<pre>
+
+
+</pre>
+
+<a href="#top"><p align="center"><img src="faq_l1.gif" alt="---------------" width="600" height="20" border="0"></a>
+
+<pre>
+
+
+</pre>
+
+
+<p>
+     --&gt; <strong>Connect to the archives and get a directory of some of the main areas:
+</strong>
+
+
+<blockquote>
+
+<p>
+        reply &lt;your address&gt;            [this may or may not be needed on all messages 
+for your system]<br>
+        connect ftp.UU.NET              [connect to the file archives]<br>
+        chdir usenet/rec.music.gaffa/kb [change to the main area, only one CHDIR per session]
+<pre>
+
+
+</pre>
+        dir                             [get directory of main area]<br>
+        dir garden                      [get directory of GARDEN files]<br>
+        dir cloudbusting                [get directory of Cloudbusting dirs]<br>
+        dir pix                         [get dir of pix directories]<br>
+        quit
+
+
+</blockquote>
+
+<p>
+Note: The Garden is also on Gaffaweb, at <a href="http://www.gryphon.com/gaffa/garden">
+http://www.gryphon.com/gaffa/garden</a>
+
+<pre>
+
+
+</pre>
+
+<a href="#top"><p align="center"><img src="faq_l1.gif" alt="---------------" width="600" height="20" border="0"></a>
+
+<pre>
+
+
+</pre>
+
+
+<p>
+     --&gt; <strong>Connect to the Cloudbusting section and get some text files:</strong>
+
+
+<blockquote>
+
+<p>
+        reply &lt;your address&gt;<br>
+        connect ftp.UU.NET<br>
+        chdir usenet/rec.music.gaffa/kb/cloudbusting/text<br>
+                                        [change to Cloudbusting subdirectory]<br>
+        get cloud1a.txt                 [GET a file]<br>
+        get cloud1b.txt                 [GET another file, only 10 at once]<br>
+        get cloud1c.txt<br>
+        quit
+
+
+</blockquote>
+
+
+<pre>
+
+
+</pre>
+
+<a href="#top"><p align="center"><img src="faq_l1.gif" alt="---------------" width="600" height="20" border="0"></a>
+
+<pre>
+
+
+</pre>
+
+
+<p>
+     --&gt; <strong>Connect to the GARDEN section and get some GARDEN files:</strong>
+
+
+<blockquote>
+
+<p>
+        reply &lt;your address&gt;<br>
+        connect ftp.UU.NET<br>
+        chdir usenet/rec.music.gaffa/kb/garden<br>
+                                        [change to garden subdirectory]<br>
+        get GARDEN01                    [GET first GARDEN file]<br>
+        get GARDEN02                    [GET another file, only 10 at once]<br>
+        quit
+
+
+</blockquote>
+
+
+<pre>
+
+
+</pre>
+
+<a href="#top"><p align="center"><img src="faq_l1.gif" alt="---------------" width="600" height="20" border="0"></a>
+
+
+<pre>
+
+
+</pre>
+
+
+<p>
+     --&gt; <strong>Connect to pix.hill and get Love-Hounds picture:</strong>
+
+
+<blockquote>
+
+<p>
+        reply &lt;your address&gt;<br>
+        connect ftp.UU.NET<br>
+        chdir usenet/rec.music.gaffa/kb/pix/pix.hill<br>
+        uuencode                        [specify UUENCODE format]<br>
+        binary                          [specify BINARY format]<br>
+        get LOVENAME.GIF<br>
+        quit
+
+
+<p>
+     If you can't FTP and you don't have the patience to figure all this out,
+     the BBSes listed above offer the GIFs and many of the other files too.
+
+
+</blockquote>
+
+
+
+<pre>
+
+
+
+</pre>
+
+
+
+
+<a href="faq_7.html"><p align="center"><img src="line_nxt.gif" alt="----- On to the next section -----" width="600" height="20" border="0">
+</a>
+
+</body>
+</html>

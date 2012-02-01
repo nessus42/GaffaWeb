@@ -1,0 +1,330 @@
+#!/usr/local/bin/./perl
+##########################################################################
+# Created March/April 1996, Michael D. Smith 
+# Part of WebGlimpse (GlimpseHTTP) research with Udi Manber
+# Glimpse mailing list: glimpse@cs.arizona.edu
+# WebGlimpse home page: http://glimpse.cs.arizona.edu/webglimpse
+#
+# Modified by Dachuan Zhang, May 22, 1996
+# Some bugs fixed.
+##########################################################################
+
+
+
+##########################################################################
+## GLOBALS
+##########################################################################
+$archivedir = $ARGV[0];
+@filelist=();
+@THEBOX=();
+@THEPAGE=();
+
+
+##########################################################################
+## SETTINGS 
+##########################################################################
+# to be changed
+$WEBGLIMPSE_HOME = "/usr2/bgopal/webglimpse/webglimpse";
+$CGIBIN = "wgcgi-bin";
+$FULLSEARCH="webglimpse-fullsearch";
+
+# static
+$HTMLFILE_RE = "((.s?html)|(.sht)|(.htm))\$";
+$WEBGLIMPSE_LIB = "$WEBGLIMPSE_HOME/lib";
+$BACKUPEXT=".wgbak";
+$MADENH = ".wg_madenh";
+$SEARCHBOX = ".wgbox.html";
+$SEARCHPAGE_TEMPLATE = ".wgindex.html";
+$SEARCHPAGE = "wgindex.html";
+$nh_pre=".nh.";
+
+
+
+
+##########################################################################
+## ENTRY POINT
+##########################################################################
+
+#---------------------------------
+# make my libraries more important
+unshift(@INC, "$WEBGLIMPSE_LIB");
+require "config.pl";
+
+#---------------------------------
+
+$removing = $ARGV[1];
+if($removing eq "-r"){
+   $removing=1;
+}else{
+   $removing=0;
+}
+
+$keep_nh = $ARGV[2];
+if($keep_nh eq "-k"){
+   $keep_nh=1;
+}else{
+   $keep_nh=0;
+}
+
+
+
+if($archivedir eq "") {
+	$archivedir = ".";  # make it current dir
+}
+
+# try to change the directory to indexdir
+$startpwd = `pwd`;
+$retval = chdir ($archivedir);
+if($retval==0){
+	print "Cannot change directory to $archivedir.  Quitting.\n";
+	exit -3;
+}
+
+# get the 'real' path
+$archivepwd = `pwd`;
+chomp $archivepwd;
+
+# make sure it has a configuration file
+if($removing==0 && &TestConfig($archivepwd)==0){
+	print "Cannot find configuration file for archive.  Quitting.\n";
+	exit -4;
+}
+
+#----------------------
+
+$MADENH = "$archivepwd/$MADENH";
+$SEARCHBOX = "$archivepwd/$SEARCHBOX";
+
+# get the settings from the configuration file
+# there should be no problem opening this file -- we know it exists
+# read the settings
+# ($title, $archiveurl, $traverse_type, $numhops,$nhhops,$addboxes) =
+   # &ReadConfig($archivepwd);
+($title, $archiveurl, $traverse_type, $explicit_only, $numhops,
+ $nhhops, $local_limit, $remote_limit, $addboxes, @urllist) = ReadConfig($archivepwd);
+
+### HUH?  What does this code do?  Can we remove it?
+###       here just in case.
+# if we're told to do nothing, do nothing.
+# Removed next 4 lines by bgopal oct/11/96
+#if($addboxes==1 && $removing==0){
+#   print "Possible problem with addsearch.  Please investigate (debug msg).\n";
+#   exit(0);
+#}
+
+
+$archivetitle = $title;
+
+if($removing==0){
+   # generate the wgindex.html file from the .wgindex.html
+   &read_search_page($SEARCHPAGE_TEMPLATE);
+   &make_search_page($SEARCHPAGE);
+}
+
+# if we don't have to addboxes, just abort!
+if($addboxes==0) {
+   print "No search boxes used\n";
+   exit(0);
+}
+
+# open the .wg_madenh
+open(FILELIST, "$MADENH") || die "Cannot open $MADENH for reading.";
+
+# get the filelist from the file
+@filelist = <FILELIST>;
+close FILELIST;
+
+# read the search box
+if($removing==0){
+	&read_search_box($SEARCHBOX);
+}
+
+# make the additions to the corefiles
+&add_search_box(@filelist);
+
+#----------------------
+#change the dir back
+chdir($startpwd);
+
+
+
+
+
+
+##########################################################################
+### PROCEDURES
+##########################################################################
+
+##########################################################################
+sub read_search_page{
+   local($file)=@_;
+   
+   open(FILE, $file) || die "Cannot open $file for reading.\n";
+   
+   @THEPAGE = <FILE>;
+   close(FILE);
+}
+
+##########################################################################
+sub make_search_page{
+   local($file)=@_;
+   local($realline, $line, $newfile);
+
+   open(OUTPUT,">$file") || die "Cannot open $file for writing.\n";
+
+   # output the contents of THEPAGE
+   foreach $realline(@THEPAGE){
+      $line = $realline;
+      # do the substitutions and output
+      $line =~ s/\$ARCHIVETITLE/$archivetitle/g;
+      $line =~ s/\$ARCHIVEURL/$archiveurl/g;
+      $line =~ s/\$ARCHIVEPWD/$archivepwd/g;
+      $line =~ s/\$CGIBIN/$CGIBIN/g;
+      $line =~ s/\$FILE/$file/g;
+      print OUTPUT $line;
+   }
+
+   close OUTPUT;
+   
+}
+
+##########################################################################
+sub read_search_box{
+	local($file)=@_;
+
+	open(FILE, $file) || die "Cannot open $file for reading.\n";
+
+	@THEBOX = <FILE>;
+	close(FILE);
+}
+
+##########################################################################
+sub add_search_box{
+	local(@filelist) = @_;
+	local($file, $tempfile,$left,$mid,$right,$did_box);
+
+	# for each file
+	foreach $file(@filelist){
+		chomp($file);  # remove \n if exists
+
+		# I can ONLY modify .html files
+		next if ($file !~ /$HTMLFILE_RE/);
+
+		# stat the file
+		my(@statinfo) = stat($file);
+
+		# open the file for reading
+		eval {
+			open(INPUT, $file);
+		};
+		if ($@){
+			warn "Cannot open file $file: $@\n";
+			next;
+		}
+
+		# open a temp file for writing
+		$tempfile = "$file.tmp";
+		open(OUTPUT, ">$tempfile");
+
+		$did_box=0;
+		$rid_box=0;
+		while(<INPUT>){
+			# copy until we see either </body>, </html>, or <!--GH_SEARCH-->
+			if($did_box==0 && /(.*)(<\/body>|<\/html>|<\!--GH_SEARCH-->)(.*)/i){
+
+				$left = $1;
+				$mid = $2;
+				$right = $3;
+	
+				# if we have <!GH_SEARCH>, skip through <!GH_END>
+				if($mid =~ /^<\!--GH_SEARCH-->$/i){
+					while(<INPUT>){
+						/(.*)(<\!--GH_END-->)(.*)/i || next;
+						$right=$3;
+						last;
+					}
+					($left eq "") || print OUTPUT "$left\n";
+					if ($removing == 1 && $rid_box == 0)	{
+						&do_box($file);
+						print OUTPUT "<!--GH_SEARCH-->\n";
+						print OUTPUT "<!--GH_END-->\n";
+						$rid_box = 1;
+					} elsif ($removing == 1)	{
+						;
+					} else	{
+						&do_box($file);
+						$did_box = 1;
+					}	
+					($right eq "")||print OUTPUT "$right\n";
+				} else	{
+					$right = "$mid$right";
+					($left eq "") || print OUTPUT "$left\n";
+					if ($removing != 1 && $did_box == 0)	{
+						&do_box($file);
+						$did_box = 1;
+					}
+					($right eq "")||print OUTPUT "$right\n";
+				}
+				# set the box var to true
+			}else{
+				print OUTPUT $_;
+			}
+		}
+
+		if($did_box==0 && $rid_box==0){
+			&do_box($file);
+		}
+			
+		# close the two files
+		close OUTPUT;
+		close INPUT;
+
+		### TO DO -- don't do this
+		# rename the original into .wgbackup
+		# system("mv $file $file$BACKUPEXT");
+
+		# copy the temp file into the original
+		system("mv -f $tempfile $file");
+		chmod (0644, $file);
+
+		# modify the access time back to the original
+		utime(@statinfo[8], @statinfo[9], $file);
+
+	}
+}
+
+##########################################################################
+sub do_box{
+	local($file)=@_;
+	local($realline, $line, $newfile);
+
+	# if we're removing, try to delete the neighborhood, too
+	if($removing==1){
+		# might as well kill the neighborhood if no one will refer to it!
+		# prepend the .nh_
+		$newfile = $file;
+   		$newfile =~ s/([^\/]+)$/$nh_pre$1/;
+		print "removing $newfile\n";
+		if($keep_nh==0){
+		   unlink("$newfile");
+		}
+		return;
+	}
+
+	print OUTPUT "<!--GH_SEARCH-->\n";
+
+	# output the contents of THEBOX
+	foreach $realline(@THEBOX){
+		$line = $realline;
+		# do the substitutions and output
+		$line =~ s/\$ARCHIVETITLE/$archivetitle/g;
+		$line =~ s/\$ARCHIVEURL/$archiveurl/g;
+		$line =~ s/\$ARCHIVEPWD/$archivepwd/g;
+		$line =~ s/\$CGIBIN/$CGIBIN/g;
+		$line =~ s/\$FILE/$file/g;
+		print OUTPUT $line;
+	}
+
+	print OUTPUT "<!--GH_END-->\n";
+}
+
