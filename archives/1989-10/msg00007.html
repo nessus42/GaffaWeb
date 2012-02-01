@@ -1,0 +1,127 @@
+<!-- MHonArc v2.3.3 -->
+<!--X-Subject: Re: retraKTion; and admoniKTion -->
+<!--X-From: heath@cs.jhu.edu -->
+<!--X-Date: Fri, 09 Jun 89 12:29:25 EDT -->
+<!--X-Message-Id: 14648.966051776.7@NO&#45;ID&#45;FOUND.mhonarc.com -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML//EN">
+<HTML>
+<HEAD>
+<TITLE>love-hounds - Re: retraKTion; and admoniKTion</TITLE>
+<LINK REV="made" HREF="mailto:heath@cs.jhu.edu">
+<LINK REL="StyleSheet" HREF="/archives/lh.css" TYPE="text/css">
+</HEAD>
+<BODY>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<P>
+<A HREF="/intro/toc.html">Gaffaweb</A> &gt;
+<A HREF="/archives/">Love &amp; Anger</A> &gt;
+1989-10 &gt;
+[ <A HREF="index.html#00007">Date Index</A> |
+<A HREF="threads.html#00007">Thread Index</A> ]
+<BR>
+[<A HREF="msg00022.html">Date Prev</A>] [<A HREF="msg00008.html">Date Next</A>] [<A HREF="msg00006.html">Thread Prev</A>] [<A HREF="msg00009.html">Thread Next</A>]
+<HR>
+
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<H1>Re: retraKTion; and admoniKTion</H1>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<P>
+ 
+From: <A HREF="mailto:heath@cs.jhu.edu">heath@cs.jhu.edu</A><BR>
+
+ 
+Date: Fri, 09 Jun 89 12:29:25 EDT<BR>
+
+ 
+Subject: Re: retraKTion; and admoniKTion<BR>
+
+</P>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+  
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<PRE>
+  Currently, there are about 11 meg in the love-hounds archives. It is
+very interesting to sit down and just read them. For reference purposes,
+however, they are poorly organized. Here are two awk scripts to help make
+searching through the archives a little easier. If you know awk, you
+should be able to customize them with little trouble.
+
+  After ftp'ing the archives execute the command:
+
+awk -f awkscript 0* &gt;output-file
+
+ where 'awkscript' is the name of one of the awk script files below, p.awk
+or a.awk, and 'output-file' is the file in which you wish all the results
+to be placed.
+
+  Here is the first script, p.awk. It will output all paragraphs in all
+postings that contain a given phrase. You should change /bootleg/ to the
+phrase you want to find.
+
+BEGIN {indx = 0; found = 0}
+  ($0 &lt; "!") { if (found == 1) for (i=1;i&lt;=indx;i++) print st[i];
+	       found = 0; indx = 0}
+  { indx++ ; st[indx] = $0 ; if ($0 ~ /bootleg/) found = 1}
+
+
+The second script, a.awk,  outputs all articles that contain a given phrase.
+Again, you should change /bootleg/ to the phrase you would like to find.
+
+BEGIN {indx = 0; found = 0}
+  ($0 ~ /^From/) { if (found == 1) for (i=1;i&lt;=indx;i++) print st[i];
+	       found = 0; indx = 0}
+  { indx++ ; st[indx] = $0 ; if ($0 ~ /bootleg/) found = 1}
+
+
+You will still have a lot of reading to do, but this may simplify the task
+of searching through the archives a little.
+
+--
+Dave Heath			heath@crabcake.cs.jhu.edu
+
+</PRE>
+
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<HR>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<UL>
+<LI>Prev by Date:
+<STRONG><A HREF="msg00022.html">No Subject</A></STRONG>
+</LI>
+
+<LI>Next by Date:
+<STRONG><A HREF="msg00008.html">Re: retention and archives...</A></STRONG>
+</LI>
+
+<LI>Prev by thread:
+<STRONG><A HREF="msg00006.html">Re: Terry Gilliam</A></STRONG>
+</LI>
+
+<LI>Next by thread:
+<STRONG><A HREF="msg00009.html">obsKuriTies 2 update; misK.; and KT NEWS</A></STRONG>
+</LI>
+
+<LI><A HREF="index.html#00007">Date Index</A>
+<LI><A HREF="threads.html#00007">Thread Index</A>
+</UL>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</BODY>
+</HTML>

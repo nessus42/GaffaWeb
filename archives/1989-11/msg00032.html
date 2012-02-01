@@ -1,0 +1,320 @@
+<!-- MHonArc v2.3.3 -->
+<!--X-Subject: Lyrics Server Directions -->
+<!--X-From: scottm@mist.cs.orst.edu (Michael Gordon Scott) -->
+<!--X-Date: 22 Jun 89 19:34:13 GMT -->
+<!--X-Message-Id: 1803.966051798.32@NO&#45;ID&#45;FOUND.mhonarc.com -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML//EN">
+<HTML>
+<HEAD>
+<TITLE>love-hounds - Lyrics Server Directions</TITLE>
+<LINK REV="made" HREF="mailto:scottm@mist.cs.orst.edu">
+<LINK REL="StyleSheet" HREF="/archives/lh.css" TYPE="text/css">
+</HEAD>
+<BODY>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<P>
+<A HREF="/intro/toc.html">Gaffaweb</A> &gt;
+<A HREF="/archives/">Love &amp; Anger</A> &gt;
+1989-11 &gt;
+[ <A HREF="index.html#00032">Date Index</A> |
+<A HREF="threads.html#00032">Thread Index</A> ]
+<BR>
+[<A HREF="msg00031.html">Date Prev</A>] [<A HREF="msg00035.html">Date Next</A>] [<A HREF="msg00031.html">Thread Prev</A>] [<A HREF="msg00035.html">Thread Next</A>]
+<HR>
+
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<H1>Lyrics Server Directions</H1>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<P>
+ 
+From: <A HREF="mailto:scottm@mist.cs.orst.edu">scottm@mist.cs.orst.edu</A> (Michael Gordon Scott)<BR>
+
+ 
+Date: 22 Jun 89 19:34:13 GMT<BR>
+
+ 
+Subject: Lyrics Server Directions<BR>
+
+ 
+Keywords: You got 'em<BR>
+
+ 
+Newsgroups: <A HREF="news:rec.music.gaffa">rec.music.gaffa</A><BR>
+
+ 
+Sender: <A HREF="mailto:usenet@cs.orst.edu">usenet@cs.orst.edu</A><BR>
+
+</P>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+  
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<PRE>
+
+Here is the list of the directions to the Lyrics Server as promised.  Good
+luck.
+
+Oh, and IED, in reponce to a little blurb you responded to me about in one
+of your loooonnnngg (but very informative and looked forward to), I mentioned
+a Kate Bush III interview CD.  This is the exact title I saw in last weeks 
+Goldmine magazine.  I was assuming it was the third in the series of interview
+Disks that have been put out. (I have the first two, and luv 'em).  Please
+tell more about the interview disks you know about.....
+
+Anyway, save this and read it a couple of times before trying.  There are some
+specific things you have to do before the server will work for you.....
+
+--------------------   Cut here and save the rest    -------------------
+
+Request: HELP
+
+Carefully read the terms and conditions of the following agreement PRIOR
+to sending requests to the Lyrics server. Sending additional requests to
+the server indicates your acceptance of these terms and conditions.
+
+ YOU UNDERSTAND AND AGREE AS FOLLOWS:
+
+  a.  The lyrics server is providing a service at your request, acting as
+      your authorized agent.  All actions taken by the server as response to
+      your requests are your own responsibility.
+
+  b.  In no event will the owner and/or author of the server be liable for
+      direct, indirect, special, incidental, or consequential damages
+      resulting from any use of the server, even if the possibility of such
+      damages is known.
+
+ Enjoy the Lyrics Server.
+
+                Lyrics Server Help
+                ------ ------ ----
+
+Introduction:
+     This program is designed to read requests from a mail file, and
+reply with the appropriate selections from the database.
+
+The format for a request from the lyrics server is as follows:
+   Command/param1=option/param2=option/param3=option
+
+There are 3 commands available for requests.
+
+   Lyrics - prints lyrics
+   Albums - prints album titles and authors
+   Songs  - prints album titles, authors, and songs on albums
+
+These commands will accept 3 parameters.
+   /Author=xx   restricts command to response that is the work of author xx
+
+   /Album=xx    restricts command to responses contained on album xx
+
+   /Song=xx     restricts command to responses of song titled xx
+
+Examples:
+
+   Albums/Author=Peter Gabriel
+          -will list album titles of Peter Gabriel
+
+   Lyrics/Album=So
+          -will print lyrics of any album entitled So
+
+   Songs/Album=So
+          -will list all songs on any album entitled So
+
+   Lyrics/Song=Red Rain
+          -will list lyrics of any song entitled Red Rain
+
+
+Multiple parameters are also valid.
+
+Examples:
+
+   Lyrics/Album=So/Song=Red Rain
+          -will list lyrics of a song Red Rain that is contained on any album
+           called So
+
+   Albums/Author=Peter Gabriel/Song=Red Rain
+          -will list any album by Peter Gabriel that contains the song Red Rain
+
+
+Commands and parameters may be abbreviated to their minimum uniqueness, thus
+
+   Albums/Author=Peter Gabriel/Song=Red Rain
+        is equivalent to
+   Al/Au=Peter Gabriel/s=Red Rain
+
+
+Requesting Lyrics:
+   To make a request to the server, simply type the appropriate command
+line in the body of a message to
+    Lyrics Server
+or  Lyrics@UMass.BITNet                                         (BITNet)
+    Lyrics%Umass.BITNet@CUNYVM.CUNY.EDU                          (internet)
+
+If you would like to make a request from the server, a good place to start
+would be sending just
+Albums
+(The Albums command with no parameters) which will list all album entries.
+
+Multiple requests can be made in one letter by typing each command set
+on a separate line. The subject line is ignored by the server.
+
+The server checks for mail every ten minutes, so a response shouldn't take
+any longer than that under most circumstances. Network replies obviously
+depend on other factors as well.
+
+Note: Some requests may entail lengthy responses. Users with minimal file
+      space should be aware of this.
+Note: a * next to a song title indicates that it is an instrumental, or
+      no lyrics are available for it.
+
+
+Advanced help is available by typing HELP/option
+where option is one of the following available topics:
+   FORMAT - instructions for formatting lyrics to be contributed
+   SEARCH - describes the wildcard string search capability
+
+The lyrics server string search is very useful for abbreviating
+song/album titles if you aren't positive of spelling or punctuation.
+
+Contributions are always encouraged and appreciated.
+
+
+Please send all questions, comments, corrections, additions, and whatnot to:
+            Lyrics Manager
+       or   Lyrman@UMass.BITNet
+            Lyrman%UMass.BITNet@CUNYVM.CUNY.EDU
+Request: HELP/FORMAT
+
+          File Formatting for Lyrics Server
+          ---- ---------- --- ------ ------
+
+   All lyrics must be in the proper format to be interpreted by
+the lyrics server program.
+The title to each song must be preceded by a + which must be on the
+beginning of a line. The markers are used for counting and locating
+the individual songs, and are not printed when requests are made.
+The first two lines before the first song title should contain the author
+and album title, and all subsequent new songs on the same album should
+be indicated as such by a + directly before the song title. Underlining
+the song title is helpful as a means of separating songs.
+
+Example:
+Peter Gabriel
+So
++Red Rain
+--- ----
+
+ . (lyrics)
+ .
+ .
+
++Sledgehammer
+------------
+
+ . (lyrics)
+ .
+etc.
+
+
+Any instumentals contained on the album may be included for the sake of
+completeness. On the same line as the song title should be some appropriate
+notation indicating this.
+
+The names of the album, author, songs, as well as the file location info
+is stored in the master directories.
+
+Please save the lyrics management the trouble of editing your
+cotribution, by making sure your lyrics are correctly formatted
+for prompt addition to the lyrics server.
+
+Send lyrics and any other inquiries to Lyrics Manager.
+LYRMAN%UMASS.BITNET@CUNYVM.CUNY.EDU
+Request: HELP/SEARCH
+
+      String Search Utility for Lyrics Server
+      ------ ------ ------- --- ------ ------
+
+     The lyrics server wildcard string search will seek out character
+sequences in the three valid fields of Author, Album, and Song.
+Putting the character + in the field of search will direct the program
+to ignore any number of characters that may be between whatever
+precedes and succeeds the +. There may be any number of +'s in
+the string in any position. The major benefits of this feature
+include abbreviating requests, thereby reducing any errors that might
+be made if one is unsure of a precise name or spelling. Some song
+names in particular may have odd spacing or punctuation which
+must be matched exactly if not using this string search.
+Also, one can always look for peculiar patterns and common words
+in various songs titles, if one is into that sort of thing.
+
+Examples:
+---------
+
+al/au=pete+
+
+    will return the albums of authors whose names begin with the field
+    'pete', i.e. Pete Townshend, Peter Gabriel.
+
+ly/s=+excellent birds+
+
+    will return the lyrics to any song title which contains the string
+    'excellent birds'
+
+ly/s=+and+
+
+    will return lyrics of all songs that have the string 'and' in the
+    song title   (quite a few)
+
+s/au=+t+w+s+
+
+    will return songs of an author whose name has a 't' somewhere,
+    followed by a 'w' somewhere, followed by an 's' somewhere,
+    i.e. pete ToWnShend
+
+
+Multiple parameters with wildcards are also valid.
+
+</PRE>
+
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<HR>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<UL>
+<LI>Prev by Date:
+<STRONG><A HREF="msg00031.html">Comment on the Lyrics server</A></STRONG>
+</LI>
+
+<LI>Next by Date:
+<STRONG><A HREF="msg00035.html">Re: Mailbag for Friday, June 16</A></STRONG>
+</LI>
+
+<LI>Prev by thread:
+<STRONG><A HREF="msg00031.html">Comment on the Lyrics server</A></STRONG>
+</LI>
+
+<LI>Next by thread:
+<STRONG><A HREF="msg00035.html">Re: Mailbag for Friday, June 16</A></STRONG>
+</LI>
+
+<LI><A HREF="index.html#00032">Date Index</A>
+<LI><A HREF="threads.html#00032">Thread Index</A>
+</UL>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</BODY>
+</HTML>

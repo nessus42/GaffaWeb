@@ -1,0 +1,168 @@
+<!-- MHonArc v2.3.3 -->
+<!--X-Subject: Submission for rec&#45;music&#45;gaffa -->
+<!--X-From: Dan Kozak <dbk@mimsy.umd.edu> -->
+<!--X-Date: 6 Jun 89 05:08:25 GMT -->
+<!--X-Message-Id: 9749.966051758.71@NO&#45;ID&#45;FOUND.mhonarc.com -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML//EN">
+<HTML>
+<HEAD>
+<TITLE>love-hounds - Submission for rec-music-gaffa</TITLE>
+<LINK REV="made" HREF="mailto:dbk@mimsy.umd.edu">
+<LINK REL="StyleSheet" HREF="/archives/lh.css" TYPE="text/css">
+</HEAD>
+<BODY>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<P>
+<A HREF="/intro/toc.html">Gaffaweb</A> &gt;
+<A HREF="/archives/">Love &amp; Anger</A> &gt;
+1989-09 &gt;
+[ <A HREF="index.html#00071">Date Index</A> |
+<A HREF="threads.html#00071">Thread Index</A> ]
+<BR>
+[<A HREF="msg00061.html">Date Prev</A>] [<A HREF="msg00068.html">Date Next</A>] [<A HREF="msg00040.html">Thread Prev</A>] [<A HREF="msg00088.html">Thread Next</A>]
+<HR>
+
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<H1>Submission for rec-music-gaffa</H1>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<P>
+ 
+From: Dan Kozak &lt;<A HREF="mailto:dbk@mimsy.umd.edu">dbk@mimsy.umd.edu</A>&gt;<BR>
+
+ 
+Date: 6 Jun 89 05:08:25 GMT<BR>
+
+ 
+Subject: Submission for rec-music-gaffa<BR>
+
+ 
+Responding-System: mimsy.UUCP<BR>
+
+</P>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+  
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<PRE>
+Path: mimsy!dbk
+From: dbk@mimsy.UUCP (Dan Kozak)
+Newsgroups: rec.music.gaffa
+Subject: Re: KB images
+Summary: where to get them
+Date: 6 Jun 89 05:08:25 GMT
+References: &lt;8906051829.AA04863@nova.socsci.umn.edu&gt;
+Reply-To: dbk@mimsy.umd.edu.UUCP (Dan Kozak)
+Organization: U of Maryland, Dept. of Computer Science, Coll. Pk., MD 20742
+Lines: 65
+
+They have rather graciouly been made available by Joe Habermann
+&lt;haberman@cs.umn.edu&gt;.  Here's what he said to do:
+
+The image of Kate that is on the cover of TWS can
+be retrieved via anonymous ftp from umn-cs.cs.umn.edu (128.101.224.1)
+in the directory pub/kb. 
+ 
+The picture is in three formats:
+
+	(1) kb.reg
+
+	    A F/S rendered 1-bit rasterfile.  Will work with regular
+	    resolution Sun monitors.  It's so-so.
+
+	(2) kb.highres
+
+	    An F/S rendered 1-bit rasterfile.  Will work with high-res
+	    monitors.  Better than the regular size.
+
+	(3) kb.8bit
+
+	    The original 8-bit deep greyscale.  NOT useful for 
+	    suntools -background because suntools accepts only 1-bit
+	    deep rasterfiles.  Could use with NeWS, but makes life 
+	    slowwwwww.  Anyway, a way to do it is to refine PaintRoot 
+	    in your .user.ps file:
+
+	    (/path/for/kates/image/kb.8bit) readcanvas
+	    /pic exch def
+	    /PaintRoot {
+	        framebuffer setcanvas clippath pathbbox scale pop pop
+	            pic imagecanvas } def
+
+All of the images are compressed and thus have the .Z extension.  They
+must be uncompressed after they're retrieved before they are useful.
+
+How to get them via anonymous ftp:
+
+1. % ftp 128.101.224.1
+2. ftp&gt; &lt;Name&gt;...: anonymous
+3. ftp&gt; &lt;Password&gt;: [use your home machine user id - don't give your passwd!!]
+4. ftp&gt; cd pub/kb [changes your directory to where the images are]
+5. ftp&gt; binary [sets ftp into "binary" mode.  Important!]
+6. ftp&gt; hash [optional]
+7. ftp&gt; get kb.reg.Z  [and/or other kb files]
+8. ftp&gt; bye
+9. % uncompress kb.reg.Z
+
+Thanx, Joe!  I'm using the kb.highres as a background for X (via the
+xbgsun program) and besides brightening my day every time I close a
+window, it also gives me plenty of opprotunity to talk about one of my
+favorite subjects:
+	"Who's that?! She's gorgeous!"
+	"Well . . . sit right down . . . I'll tell you ALL about her .
+. . "
+
+#dan
+
+Clever:		dbk@mimsy.umd.edu | "Softly her tower crumbled in the 
+Not-so-clever:	uunet!mimsy!dbk   |  sweet silent sun." - Nabokov
+-- 
+#dan
+
+Clever:		dbk@mimsy.umd.edu | "Softly her tower crumbled in the 
+Not-so-clever:	uunet!mimsy!dbk   |  sweet silent sun." - Nabokov
+
+</PRE>
+
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<HR>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<UL>
+<LI>Prev by Date:
+<STRONG><A HREF="msg00061.html">Re: Beer etc (was: none)</A></STRONG>
+</LI>
+
+<LI>Next by Date:
+<STRONG><A HREF="msg00068.html">Kate-echism XXI.6.iv</A></STRONG>
+</LI>
+
+<LI>Prev by thread:
+<STRONG><A HREF="msg00040.html">Submission for rec-music-gaffa</A></STRONG>
+</LI>
+
+<LI>Next by thread:
+<STRONG><A HREF="msg00088.html">Submission for rec-music-gaffa</A></STRONG>
+</LI>
+
+<LI><A HREF="index.html#00071">Date Index</A>
+<LI><A HREF="threads.html#00071">Thread Index</A>
+</UL>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</BODY>
+</HTML>

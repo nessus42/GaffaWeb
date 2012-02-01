@@ -33,6 +33,3 @@
 #------------------------------------------------------------------------------
 # Optional, per-repository ignores
 #------------------------------------------------------------------------------
-
-# We don't want to check in the archives for now, because they are big.
-archives

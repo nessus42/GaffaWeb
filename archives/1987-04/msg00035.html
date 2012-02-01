@@ -1,0 +1,162 @@
+<!-- MHonArc v2.3.3 -->
+<!--X-Subject: Getting shed of IED -->
+<!--X-From: Chris J. Valas <cv%linus@mitre&#45;bedford.ARPA> -->
+<!--X-Date: Fri, 20 Feb 87 16:22:11 EST -->
+<!--X-Message-Id: 31013.966051081.35@NO&#45;ID&#45;FOUND.mhonarc.com -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML//EN">
+<HTML>
+<HEAD>
+<TITLE>love-hounds - Getting shed of IED</TITLE>
+<LINK REV="made" HREF="mailto:cv%linus@mitre-bedford.ARPA">
+<LINK REL="StyleSheet" HREF="/archives/lh.css" TYPE="text/css">
+</HEAD>
+<BODY>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<P>
+<A HREF="/intro/toc.html">Gaffaweb</A> &gt;
+<A HREF="/archives/">Love &amp; Anger</A> &gt;
+1987-04 &gt;
+[ <A HREF="index.html#00035">Date Index</A> |
+<A HREF="threads.html#00035">Thread Index</A> ]
+<BR>
+[<A HREF="msg00034.html">Date Prev</A>] [<A HREF="msg00036.html">Date Next</A>] [<A HREF="msg00034.html">Thread Prev</A>] [<A HREF="msg00036.html">Thread Next</A>]
+<HR>
+
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<H1>Getting shed of IED</H1>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<P>
+ 
+From: Chris J. Valas &lt;<A HREF="mailto:cv%linus@mitre-bedford.ARPA">cv%linus@mitre-bedford.ARPA</A>&gt;<BR>
+
+ 
+Date: Fri, 20 Feb 87 16:22:11 EST<BR>
+
+ 
+Subject: Getting shed of IED<BR>
+
+ 
+Posted-Date: Fri, 20 Feb 87 16:22:11 EST<BR>
+
+ 
+Posted-From: The MITRE Corp., Bedford, MA<BR>
+
+</P>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+  
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<PRE>
+
+I say, if you are going to be offensive, get professional about it:
+
+IED used to really piss me off badly, so I wrote the following GNU
+emacs lisp gem, and you all can use it too...
+
+
+Put this in your .emacs file:
+;; load rmail extensions (which load rmail)
+(autoload 'rmail "rmail-plus"
+	  "Rmail and personal extensions thereto
+are loaded on demand." t)
+
+
+Put this file somewhere downline in your load-path (call it
+rmail-plus.el):
+
+(load-library "rmail")
+
+(define-key rmail-mode-map "b" 'kill-ied)
+
+(defun kill-ied ()
+  "Rip his fucking lungs out."
+  (interactive)
+  (let (start end hit here (more t))
+    (save-excursion
+      (toggle-read-only)
+      (goto-char (point-min))
+      (while (or (progn
+		   (setq here (point))
+		   (search-forward "From: IED0DXM" (point-max) t))
+		 (progn
+		   (goto-char here)
+		   (search-forward "From: nessus" (point-max) t)))
+	(save-excursion
+	  (if (search-backward "[][][][][][][][][][]" (point-min) t)
+	      (progn 
+		(beginning-of-line 2)
+		(setq start (point)))
+	    (setq start (point-min)))
+	  (if (search-forward "[][][][][][][][][][]" (point-max) t)
+	      (setq end (point))
+	    (setq end (point-max)))
+	  (delete-region start end)
+	  (setq hit t)))
+      (toggle-read-only))
+    (if hit (message "IED's shredded."))))
+
+
+It does Doug too!  Actually, I kind of miss old Doug....
+
+Now, whenever you fire up rmail, all this shit will get loaded.  And
+whenever you hit a new message file from love-hounds, you can read
+down until Marvwank starts to bug you, then just hit the 'b' key and
+watch the fucker disappear before your very eyes.  This was written
+some time ago, and it could be better and cleaner, but it works
+gloriously and I have better things to do than to continue wasting my
+time with shit that IED says.
+
+By the way, just for you purists who demand music with your postings,
+has anyone heard of a Dallas band called The Gash?  I've got a demo
+tape that rules.  No, Hofman, you can't get a copy.
+
+Any more about a new Captain Beefheart record?  There've been some
+sniffings....  we need the stench of creation.
+
+VALAS (not you)
+
+</PRE>
+
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<HR>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<UL>
+<LI>Prev by Date:
+<STRONG><A HREF="msg00034.html">EGOSLAVIA MY ASS, PSYCODRAMA IS ZZ TOP (Part 3)</A></STRONG>
+</LI>
+
+<LI>Next by Date:
+<STRONG><A HREF="msg00036.html">from psycodrama to whitehouse</A></STRONG>
+</LI>
+
+<LI>Prev by thread:
+<STRONG><A HREF="msg00034.html">EGOSLAVIA MY ASS, PSYCODRAMA IS ZZ TOP (Part 3)</A></STRONG>
+</LI>
+
+<LI>Next by thread:
+<STRONG><A HREF="msg00036.html">from psycodrama to whitehouse</A></STRONG>
+</LI>
+
+<LI><A HREF="index.html#00035">Date Index</A>
+<LI><A HREF="threads.html#00035">Thread Index</A>
+</UL>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</BODY>
+</HTML>

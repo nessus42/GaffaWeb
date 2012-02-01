@@ -1,0 +1,183 @@
+<!-- MHonArc v2.3.3 -->
+<!--X-Subject: Re: Voice processing technology -->
+<!--X-From: bloch%mandrill@ucsd.edu (Steve Bloch) -->
+<!--X-Date: 5 Nov 89 06:39:51 GMT -->
+<!--X-Message-Id: 21738.966052163.63@NO&#45;ID&#45;FOUND.mhonarc.com -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 3801@ur&#45;cc.UUCP -->
+<!--X-Reference: 4331@blake.acs.washington.edu -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML//EN">
+<HTML>
+<HEAD>
+<TITLE>love-hounds - Re: Voice processing technology</TITLE>
+<LINK REV="made" HREF="mailto:bloch%mandrill@ucsd.edu">
+<LINK REL="StyleSheet" HREF="/archives/lh.css" TYPE="text/css">
+</HEAD>
+<BODY>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<P>
+<A HREF="/intro/toc.html">Gaffaweb</A> &gt;
+<A HREF="/archives/">Love &amp; Anger</A> &gt;
+1989-28 &gt;
+[ <A HREF="index.html#00063">Date Index</A> |
+<A HREF="threads.html#00063">Thread Index</A> ]
+<BR>
+[<A HREF="msg00062.html">Date Prev</A>] [<A HREF="msg00079.html">Date Next</A>] [<A HREF="msg00053.html">Thread Prev</A>] [<A HREF="msg00048.html">Thread Next</A>]
+<HR>
+
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<H1>Re: Voice processing technology</H1>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<P>
+ 
+From: <A HREF="mailto:bloch%mandrill@ucsd.edu">bloch%mandrill@ucsd.edu</A> (Steve Bloch)<BR>
+
+ 
+Date: 5 Nov 89 06:39:51 GMT<BR>
+
+ 
+Subject: Re: Voice processing technology<BR>
+
+ 
+Keywords: FFT, IIR, DASP<BR>
+
+ 
+Newsgroups: <A HREF="news:rec.music.gaffa">rec.music.gaffa</A><BR>
+
+ 
+Organization: University of California, San Diego<BR>
+
+ 
+References: &lt;3801@ur-cc.UUCP&gt; &lt;4331@blake.acs.washington.edu&gt;<BR>
+
+ 
+Reply-To: <A HREF="mailto:bloch%mandrill.UUCP@ucsd.edu">bloch%mandrill.UUCP@ucsd.edu</A> (Steve Bloch)<BR>
+
+ 
+Sender: <A HREF="mailto:nobody%sdcsvax@ucsd.edu">nobody%sdcsvax@ucsd.edu</A><BR>
+
+ 
+Summary: FFT or IIR<BR>
+
+</P>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+  
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<PRE>
+
+
+boris@prodigal.psych.rochester.edu writes:
+&gt;Ever since I heard Laurie Anderson I've been wondering... how exactly
+&gt;do they do this filtering to change the sound of someone's voice, or
+&gt;to make it sound like 3 people singing at once...?
+
+Jon Drukman writes:
+&gt;Well, there's two kinds of boxes.  The 'vocoder' ...
+&gt;
+&gt;The harmonizer is a device which takes your voice and electronically
+&gt;alters the frequencies in it (how, I'm not exactly sure) to produce a
+&gt;harmony line with it. 
+
+Donley describes a sample-and-chop approach and a frequency-dividing
+approach.
+&gt;I would NOT expect that harmonizers do complete spectral analysis
+&gt;on samples in real time -- even the Fairlight doesn't do that!
+Of course, the special-purpose FFT chips are getting faster every day.
+Let's see... to do it in real time, assuming mono input and say a
+24KHz sampling rate, you need to do a 1024-point FFT in 40 msec.
+That's within the capabilities of current hardware, I think.  'Course,
+you'd only get a precision of 24Hz, which wouldn't be good enough to
+produce a clean harmony in the 500-2000Hz range (1-3 quarter-tones).
+If you can do a 2048-point FFT in real-time (here you have 80 msec to
+do it), the precision becomes 12Hz.  Check the newsgroup comp.dsp for
+more accurate answers.
+
+&gt;Any other possibilities?
+
+Back to Jon:
+&gt;With the advent of digital sampling technology, all this stuff is now
+&gt;a piece of cake, and you can buy cheap boxes to do it.  I have a
+&gt;cartridge for my computer which when coupled with appropriate software
+&gt;can transform the pitch of any incoming signal.  If you put a digeridu
+&gt;into it playing only one note (since that's all they can play) and
+&gt;then played a melody on a MIDI keyboard, it would 'play' the melody
+&gt;with a digeridu sound.
+If I understand this right, it's just straight play-back-faster-or-
+slower, which changes the ADSR parameters if you take it very far
+(like, more than half an octave or so).
+
+But if all you want to do is echo a voice at a particular pitch (or
+several pitches), and you don't want to change what pitch it is too
+often, you can do it with an IIR filter, using very short digital
+feedback to build resonances at whatever pitches strike your fancy.
+I've always assumed that was how Laurie did it, as it's computa-
+tionally very easy (to resonate two pitches, you need a four-pole
+filter, which only requires three adds and four multiplies per
+sample, and an 8086 can do that.)
+The only problem is that DESIGNING the IIR filter, figuring out the
+coefficients to suit the pitches you want to resonate, takes some
+work, and a grasp of complex analysis doesn't hurt.  You don't want
+to do it in real-time.
+
+By the way, you notice that whenever Laurie has her voice echoed on a
+particular fixed harmony it "rings" for a while?  That's a direct
+effect of the IIR ("infinite impulse response" means that technically
+it rings forever, but it may drop below audibility in less than a
+second).  How long it rings depends on how precise you want your
+pitches to be; if you want absolutely perfect tuning, it WILL ring
+forever, without attenuating.
+
+Boris writes again:
+&gt;Or suggest a good book to read? [or words to that effect]
+How about _Digital_Audio_Signal_Processing_(an_Anthology)_, edited by
+John Strawn, Wm. Kaufmann 1985?  Or you could type "g comp.dsp".
+
+"Writers are a funny breed -- I should know." -- Jane Siberry
+
+bloch%cs@ucsd.edu
+
+</PRE>
+
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<HR>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<UL>
+<LI>Prev by Date:
+<STRONG><A HREF="msg00062.html">Review of the album in the Nov. 5 _L.A. Times_</A></STRONG>
+</LI>
+
+<LI>Next by Date:
+<STRONG><A HREF="msg00079.html">Playlist</A></STRONG>
+</LI>
+
+<LI>Prev by thread:
+<STRONG><A HREF="msg00053.html">Re: Voice processing technology</A></STRONG>
+</LI>
+
+<LI>Next by thread:
+<STRONG><A HREF="msg00048.html">Negativity and Melody Maker</A></STRONG>
+</LI>
+
+<LI><A HREF="index.html#00063">Date Index</A>
+<LI><A HREF="threads.html#00063">Thread Index</A>
+</UL>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</BODY>
+</HTML>
