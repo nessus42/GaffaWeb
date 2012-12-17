@@ -1,0 +1,11 @@
+BODY, TD, TH { 
+	background: #000000;
+	background-image: url(/archives/a_kate.gif);
+	color: #ff1919;
+	font-weight: bold;
+}
+
+A { text-decoration: none }
+A:link    { color: #fba66b }
+A:active  { color: #fde291 }
+A:visited { color: #ff4e23 }

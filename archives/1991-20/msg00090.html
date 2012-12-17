@@ -1,0 +1,172 @@
+<!-- MHonArc v2.3.3 -->
+<!--X-Subject: exploding love hounds script -->
+<!--X-From: stern@chem.nwu.edu (Charlotte Stern) -->
+<!--X-Date: Thu, 13 Jun 1991 13:53:11 &#45;0800 -->
+<!--X-Message-Id: 519.966053487.90@NO&#45;ID&#45;FOUND.mhonarc.com -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML//EN">
+<HTML>
+<HEAD>
+<TITLE>love-hounds - exploding love hounds script</TITLE>
+<LINK REV="made" HREF="mailto:stern@chem.nwu.edu">
+<LINK REL="StyleSheet" HREF="/archives/lh.css" TYPE="text/css">
+</HEAD>
+<BODY>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<P>
+<A HREF="/intro/toc.html">Gaffaweb</A> &gt;
+<A HREF="/archives/">Love &amp; Anger</A> &gt;
+1991-20 &gt;
+[ <A HREF="index.html#00090">Date Index</A> |
+<A HREF="threads.html#00090">Thread Index</A> ]
+<BR>
+[<A HREF="msg00094.html">Date Prev</A>] [<A HREF="msg00098.html">Date Next</A>] [<A HREF="msg00087.html">Thread Prev</A>] [<A HREF="msg00098.html">Thread Next</A>]
+<HR>
+
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<H1>exploding love hounds script</H1>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<P>
+ 
+From: <A HREF="mailto:stern@chem.nwu.edu">stern@chem.nwu.edu</A> (Charlotte Stern)<BR>
+
+ 
+Date: Thu, 13 Jun 1991 13:53:11 -0800<BR>
+
+ 
+Subject: exploding love hounds script<BR>
+
+ 
+To: <A HREF="mailto:rpeck@jessica.stanford.edu">rpeck@jessica.stanford.edu</A><BR>
+
+ 
+Cc: <A HREF="mailto:love-hounds@eddie.mit.edu">love-hounds@eddie.mit.edu</A><BR>
+
+</P>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+  
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<PRE>
+OK.  Here's how the lovehounds digest expander works.
+There are three executable scripts involved.
+Let's assume they are in your directory ~/lib
+and that this is on your path.  The three scripts
+are:
+
+1) lh
+2) genmail1
+3) genmail2
+
+They work as follows:
+Every time you receive a digest, you save/append it to
+a file named, simply 'lh' in a directory called ~/mail
+(where ~ indicates your home directory).  When you have saved
+all the digests you want to read in lh, exit your mailer.
+Now, simply issue the command 'lh'.  This will invoke the
+lh script in your ~/lib directory.  This script uses the
+other two scripts, genmail1 and genmail2 (these are really just
+inputs to sed) to explode the digests.  The exploded version
+is placed in a file called 'lh.mail' in your ~/mail directory.
+The 'lh' file is deleted.  And your mailer is invoked on
+'lh.mail', so you are instantly able to read lovehounds.
+This script can be used even if an 'lh' file doesn't exist 
+(e.g. if you save your digests in 'lh', then read a few
+entries, then exit, to recommence reading love hounds, just
+type lh and it will detect everything automatically and will
+put you back where you left off).  Further, if you already have
+an 'lh.mail' file in existence with stuff you haven't finished reading
+and a new love hounds digest comes in, just follow the same steps
+as above (save digest in file 'lh', execute lh) and the script
+will automatically append the new digest entries to the ones you
+haven't finished reading yet.  
+
+Should you type 'lh' when there is neither a new digest,
+nor any old ones you haven't read yet, the script just says
+"no new love hounds".  Very convenient.
+
+Of course you can modify the script if you like to keep things
+in other directories.  Right now my mailer is called "mailx" so
+you should change that to "mail" if your mailer is called that,
+or to whatever your unix mailer is called.
+
+Let me know if you have any questions.  If you're not familiar 
+with unix mail, you should type "man mail", and read through
+the explanation of the -f option, which the script uses.
+You might also check up on the sed command: "man sed".
+
+Here are the only three files you should need:
+
+---------------------------lh-----modify if necessary-----cut here----
+#! /bin/csh -f
+cd ~/mail
+if (-e lh) then 
+   sed -f ~/lib/genmail1 lh | sed -f ~/lib/genmail2 | cat &gt;&gt;! lh.mail 
+   rm lh
+endif
+if (-e lh.mail) then 
+   mailx -f lh.mail
+   else echo No new Love Hounds.
+endif
+----------------------------end lh-------------------------------------
+
+------------------------------genmail1-----------------------cut here---
+1h
+/^\[\]/,/^/ G
+---------------------------end genmail1----------------------------------
+
+------------------------------genmail2-----------------------cut here---
+/^\[\]/,/^/ d
+---------------------------end genmail2----------------------------------
+
+Good luck!
+Hope it works!
+
+-mjm (mike mendelson)
+
+
+
+</PRE>
+
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<HR>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<UL>
+<LI>Prev by Date:
+<STRONG><A HREF="msg00094.html">Re: a rational happy review</A></STRONG>
+</LI>
+
+<LI>Next by Date:
+<STRONG><A HREF="msg00098.html">Does it really have to be Happy vs. Kate?</A></STRONG>
+</LI>
+
+<LI>Prev by thread:
+<STRONG><A HREF="msg00087.html">oodles and pages of lyrics</A></STRONG>
+</LI>
+
+<LI>Next by thread:
+<STRONG><A HREF="msg00098.html">Does it really have to be Happy vs. Kate?</A></STRONG>
+</LI>
+
+<LI><A HREF="index.html#00090">Date Index</A>
+<LI><A HREF="threads.html#00090">Thread Index</A>
+</UL>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</BODY>
+</HTML>

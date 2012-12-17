@@ -1,0 +1,178 @@
+<!-- MHonArc v2.3.3 -->
+<!--X-Subject: Re: Fruitopia, Fake Student Marketing Tactics -->
+<!--X-From: Ulrich Grepel <uli@zoodle.robin.de> -->
+<!--X-Date: Sun, 11 Jun 95 10:42:15 +0200 -->
+<!--X-Message-Id: m0sKib4&#45;000CtSC@zoodle.robin.de -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: Pine.SUN.3.91.950607104538.19151A&#45;100000@crl7.crl.com -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML//EN">
+<HTML>
+<HEAD>
+<TITLE>love-hounds - Re: Fruitopia, Fake Student Marketing Tactics</TITLE>
+<LINK REV="made" HREF="mailto:uli@zoodle.robin.de">
+<LINK REL="StyleSheet" HREF="/archives/lh.css" TYPE="text/css">
+</HEAD>
+<BODY>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<P>
+<A HREF="/intro/toc.html">Gaffaweb</A> &gt;
+<A HREF="/archives/">Love &amp; Anger</A> &gt;
+1995-19 &gt;
+[ <A HREF="index.html#00001">Date Index</A> |
+<A HREF="threads.html#00001">Thread Index</A> ]
+<BR>
+[<A HREF="msg00000.html">Date Prev</A>] [<A HREF="msg00002.html">Date Next</A>] [<A HREF="msg00000.html">Thread Prev</A>] [<A HREF="msg00002.html">Thread Next</A>]
+<HR>
+
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<H1>Re: Fruitopia, Fake Student Marketing Tactics</H1>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<P>
+ 
+From: Ulrich Grepel &lt;<A HREF="mailto:uli@zoodle.robin.de">uli@zoodle.robin.de</A>&gt;<BR>
+
+ 
+Date: Sun, 11 Jun 95 10:42:15 +0200<BR>
+
+ 
+Subject: Re: Fruitopia, Fake Student Marketing Tactics<BR>
+
+ 
+To: <A HREF="mailto:love-hounds@uunet.uu.net">love-hounds@uunet.uu.net</A><BR>
+
+ 
+Content-Type: text/plain<BR>
+
+ 
+References: &lt;Pine.SUN.3.91.950607104538.19151A-100000@crl7.crl.com&gt;<BR>
+
+</P>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+  
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<PRE>
+Hi!
+
+Karen wrote:
+&gt; Oh no, not the "I'm only a student, please don't completely clog up my
+&gt; e-mail system with four gazillion copies of "The Garden" in revenge for
+&gt; me taking up 68% of your digest space with moronia" tactic.  Student my
+&gt; ass.  How stupid do they think people are?
+
+I answered in private email to Karen:
+&gt; On the other hand, which stuff do you mean to keep out of the digest? Did I
+&gt; overlook some messages?
+
+Now I write:
+
+Ok, I've found 'it'. I overlooked it for the first time, because, well, I
+just skipped that huge spam posting the first time. 'twasn't the first one,
+and won't be the last one unfortunately. I then rechecked and found the
+'I'm just a student' etc.
+
+Groumpf.
+
+Well, unfortunately I can't see a good way to keep these out of the newsgroup
+AND mailing list (why not spare the newsgroup as well?) except for either someone
+monitoring each post or for a kind of 'subscribers-only' list/newsgroup.
+
+The latter might be a way. Each message from any person that posted something
+approvable before will get through immediately, while each message from a
+hitherto unknown email address will have to wait for approval. But I don't think
+Bill Wisner (or anyone else) has time for even 'just' that. Nevertheless it would
+be a solution.
+
+I've just played around with awk, sort and uniq, and found 1415 different
+email addresses in From: lines for the last 20 or so months. I only counted
+the real address part (user@site.domain), not the various different 'real names',
+and I removed upper/lower case differences, before that there were even more.
+I don't think Bill has time to approve 2.5 new addresses per day. Each day.
+By the way, there've been 6922 From: lines in that time frame. So every 5th
+article has a brand new edress.
+
+I didn't check for the From: lines to be in the header, so any quoted From:
+line counted as well. For the curious (basic version):
+
+grep From: mbox | awk '$1=="From:" {print;}' | awk '$2~/.*@.*/ {print $2;next;} $(NF)~/&lt;.*@.*&gt;/ {print substr($(NF),2,length($(NF)-2));next} {print;}' | tr A-Z a-z | sort | uniq | wc -l
+
+gee - I love UNIX ;-).
+
+Bye,
+
+Uli
+
+
+--
+"Ein 32-Bit-Betriebssystem fuer uns?" - "Wozu? Wir haben doch zwei mit 16."
+[IBM ad promoting OS/2]
+
+                                3.29
+          6) The Dreaming                                       4.41
+          7) Running Up That Hill                               5.00
+          8) Hounds of Love                                     3.02
+          9) The Big Sky                                        4.41
+         10) Cloudbusting                                       5.10
+         11) The Sensual World                                  3.57
+         12) This Woman's Work                                  3.32
+         13) December Will Be Magic Again                       4.50
+         14) Un Baiser D'Enfant                                 3.00
+         15) Experiment IV                                      4.21
+         16) Running Up That Hill (ext. mix)                    5.45
+         17) Cloudbusting (The Organon Mix)                     6.31
+
+(Timing information was collected from other releases)
+
+Ciao,
+
+Uli
+
+
+--
+"Ein 32-Bit-Betriebssystem fuer uns?" - "Wozu? Wir haben doch zwei mit 16."
+[IBM ad promoting OS/2]
+
+</PRE>
+
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<HR>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<UL>
+<LI>Prev by Date:
+<STRONG><A HREF="msg00000.html">A Message of Love and Devotion</A></STRONG>
+</LI>
+
+<LI>Next by Date:
+<STRONG><A HREF="msg00002.html">(diffs) FAQ: rec.music.gaffa - Love-Hounds - Kate Bush</A></STRONG>
+</LI>
+
+<LI>Prev by thread:
+<STRONG><A HREF="msg00000.html">A Message of Love and Devotion</A></STRONG>
+</LI>
+
+<LI>Next by thread:
+<STRONG><A HREF="msg00002.html">(diffs) FAQ: rec.music.gaffa - Love-Hounds - Kate Bush</A></STRONG>
+</LI>
+
+<LI><A HREF="index.html#00001">Date Index</A>
+<LI><A HREF="threads.html#00001">Thread Index</A>
+</UL>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</BODY>
+</HTML>

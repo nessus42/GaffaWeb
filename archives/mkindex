@@ -1,0 +1,34 @@
+#!/bin/ksh
+
+echo '<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN"
+"http://www.w3.org/TR/REC-html40/loose.dtd"> 
+<html>
+<head>
+<title>Love and Anger -- The Love-Hounds Archives</title>
+<link rel="stylesheet" href="/archives/lh.css" type="text/css">
+</head>
+<body>
+<p>
+<a href="/intro/toc.html">Gaffaweb</a> &gt;
+Love &amp; Anger
+<hr>
+<h1 align="center">Love &amp; Anger
+<br>The Love-Hounds Archives</h1>
+' > index.html
+
+cat header.html >> index.html
+
+echo "<table>" >> index.html
+
+for i in 19*
+do
+echo "<tr>" >> index.html
+echo "<td>$i</td>" >> index.html
+echo "<td><a href=\"$i/index.html\">[Date Index]</a></td>" >> index.html
+echo "<td><a href=\"$i/threads.html\">[Thread Index]</a></td>" >> index.html
+echo "</tr>" >> index.html
+done
+
+echo "</table>
+</body>
+</html>" >> index.html
